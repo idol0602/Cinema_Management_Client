@@ -4,29 +4,44 @@ import type { User } from '@/types/user.type';
 import type { AuthContextType} from '@/types/auth.type';
 import { authService } from '@/services/auth.service';
 
-export const useAuthStore = create<AuthContextType>()(
+interface AuthStore extends AuthContextType {
+  error: string | null;
+  setError: (error: string | null) => void;
+}
+
+export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
       (set) => ({
         user: null,
         isAuthenticated: false,
         isLoading: false,
+        error: null,
         login: async (email: string, password: string) => {
-          set({ isLoading: true });
+          set({ isLoading: true, error: null });
           try {
             const response = await authService.login({email, password});
-            if (response.data) {
-              set({ user: response.data.user, isAuthenticated: true, isLoading: false });
+            if (response.error) {
+              set({ error: response.error, isLoading: false });
+              throw new Error(response.error);
             }
-          } catch (error) {
-            set({ isLoading: false });
+            if (response.data) {
+              set({ user: response.data.user as User, isAuthenticated: true, isLoading: false, error: null });
+            }
+          } catch (error: any) {
+            set({ isLoading: false, error: error.message });
+            throw error;
           }
         },
-        logout: () => {
-          set({ user: null, isAuthenticated: false });
+        logout: async () => {
+          await authService.logout();
+          set({ user: null, isAuthenticated: false, error: null });
         },
         updateProfile: async (updatedUser: User) => {
           set({ user: updatedUser });
+        },
+        setError: (error: string | null) => {
+          set({ error });
         },
       }),
       {

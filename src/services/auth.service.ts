@@ -27,6 +27,30 @@ export const authService = {
             };
         }
     },
+    register: async(payload: { name: string; email: string; phone?: string; password: string }): Promise<authResponse> => {
+        try {
+            const response = await api.post("/auth/register", payload);
+            return {
+                data: response.data.data,
+                error: null
+            };
+        } catch (error) {
+            const apiError = handleApiError(error);
+            return {
+                data: {
+                    user: {
+                        name: "",
+                        email: "",
+                        phone: "",
+                        role: "",
+                        is_active: false,
+                        created_at: ""
+                    }
+                },
+                error: apiError.message
+            };
+        }
+    },
     forgotPassword: async(email: string): Promise<{success: boolean, message: string, error: string | null}> => {
         try {
             const response = await api.post("/auth/forgot-password", { email });

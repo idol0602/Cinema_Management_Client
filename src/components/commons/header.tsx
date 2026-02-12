@@ -43,9 +43,9 @@ export function Header() {
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative w-32 h-10 transition-transform duration-300 group-hover:scale-105">
               <Image
+                fill
                 src="/images/logo.png"
                 alt="Meta Cinema"
-                fill
                 className="object-contain"
                 priority
               />
@@ -103,7 +103,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/30 transition-all duration-300">
                   <LogIn className="mr-2 h-4 w-4" />
                   Đăng nhập

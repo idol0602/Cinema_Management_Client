@@ -5,7 +5,8 @@ import Link from "next/link"
 import type { MovieType } from "@/types/movie.type"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Star, Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, Star, Calendar, Ticket } from "lucide-react"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 
@@ -14,6 +15,13 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie }: MovieCardProps) {
+  const handleBooking = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // TODO: Implement booking logic
+    console.log("Book ticket for movie:", movie.title)
+  }
+
   return (
     <Link href={`/movies/${movie.id}`}>
       <Card className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-white dark:bg-gray-800">
@@ -41,6 +49,17 @@ export function MovieCard({ movie }: MovieCardProps) {
               <span className="text-white text-sm font-semibold">{movie.rating.toFixed(1)}</span>
             </div>
           )}
+
+          {/* Booking Button - Shows on Hover */}
+          <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <Button
+              onClick={handleBooking}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
+            >
+              <Ticket className="w-4 h-4 mr-2" />
+              Đặt vé
+            </Button>
+          </div>
         </div>
 
         <CardContent className="p-4 space-y-2">
