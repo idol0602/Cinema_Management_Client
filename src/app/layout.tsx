@@ -3,30 +3,32 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { Header } from '@/components/commons/header';
+import { Footer } from '@/components/commons/footer';
 import { Toaster } from 'sonner';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Modern Next.js App',
-    template: '%s | Modern Next.js App',
+    default: 'Meta Cinema - Trải nghiệm điện ảnh đẳng cấp',
+    template: '%s | Meta Cinema',
   },
-  description: 'A modern Next.js application with the latest technologies',
-  keywords: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
-  authors: [{ name: 'Your Name' }],
-  creator: 'Your Name',
+  description: 'Hệ thống rạp chiếu phim hiện đại với công nghệ tiên tiến và dịch vụ tận tâm',
+  keywords: ['Meta Cinema', 'Rạp chiếu phim', 'Phim mới', 'Đặt vé online', 'Cinema'],
+  authors: [{ name: 'Meta Cinema' }],
+  creator: 'Meta Cinema',
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
-    url: 'https://yoursite.com',
-    title: 'Modern Next.js App',
-    description: 'A modern Next.js application with the latest technologies',
-    siteName: 'Modern Next.js App',
+    url: 'https://metacinema.vn',
+    title: 'Meta Cinema - Trải nghiệm điện ảnh đẳng cấp',
+    description: 'Hệ thống rạp chiếu phim hiện đại với công nghệ tiên tiến và dịch vụ tận tâm',
+    siteName: 'Meta Cinema',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Modern Next.js App',
-    description: 'A modern Next.js application with the latest technologies',
+    title: 'Meta Cinema',
+    description: 'Hệ thống rạp chiếu phim hiện đại với công nghệ tiên tiến và dịch vụ tận tâm',
   },
   robots: {
     index: true,
@@ -41,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="min-h-screen p-3 font-sans antialiased">
+      <body className="min-h-screen font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -49,7 +51,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
+            <Header />
             {children}
+            <Footer />
             <Toaster position="top-right" richColors />
           </QueryProvider>
         </ThemeProvider>
