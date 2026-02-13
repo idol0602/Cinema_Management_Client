@@ -117,6 +117,7 @@ export const userService = {
   sendOnline: async(userId: string) => {
     try {
       await api.put(`/users/online/${userId}`);
+      console.log("send online")
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
@@ -137,6 +138,7 @@ export const userService = {
   sendHeartbeat: async(userId: string) => {
     try {
       await api.post(`/users/heartbeat/${userId}`);
+      console.log("send heartbeat")
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);

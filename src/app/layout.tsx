@@ -6,6 +6,8 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { Header } from '@/components/commons/header';
 import { Footer } from '@/components/commons/footer';
 import { Toaster } from 'sonner';
+import { ChatPopup } from '@/components/commons/ChatPopup';
+import { OnlineTracker } from '@/components/commons/OnlineTracker';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -54,6 +56,8 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
+            <ChatPopup />
+            <OnlineTracker />
             <Toaster position="top-right" richColors />
           </QueryProvider>
         </ThemeProvider>

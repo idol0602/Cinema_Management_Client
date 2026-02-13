@@ -1,6 +1,7 @@
 import api, { handleApiError } from "./api"
 import type {serviceResponse} from "../types/api.type"
-import type {CreateRateType, UpdateRateType} from "@/types/rate.type"
+import type {CreateRateType, UpdateRateType, RateType} from "@/types/rate.type"
+import type {PaginatedResponse} from "../types/pagination.type"
 
 export const rateService = {
   getAll: async () : Promise<serviceResponse> => {
@@ -92,4 +93,24 @@ export const rateService = {
       };
     }
   },
+
+  findAndPaginate: async (params: any) : Promise<PaginatedResponse<RateType>> => {
+    try {
+      const response = await api.get('/rates', { params });
+      return {
+        data: response.data.data,
+        success: true,
+        error: response.data.error,
+        meta: response.data.meta,
+        links: response.data.links
+      };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return {
+        data: [],
+        success: false,
+        error: apiError.message,
+      };
+    }
+  }
 }

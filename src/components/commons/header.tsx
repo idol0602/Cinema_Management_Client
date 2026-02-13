@@ -14,8 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogIn, LogOut, User, Settings, Menu } from "lucide-react"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
+import { LogIn, LogOut, User, ShoppingCart, Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function Header() {
@@ -66,10 +66,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border-2 border-orange-500/20 hover:border-orange-500/50 transition-colors">
-                      <AvatarImage src={user.avatar as string} alt={user.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-semibold">
-                        {getUserInitials(user.name)}
-                      </AvatarFallback>
+                      <AvatarImage name={user.name} />
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -87,12 +84,6 @@ export function Header() {
                     <Link href="/profile" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       Trang cá nhân
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Cài đặt
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

@@ -22,3 +22,10 @@ export interface UpdateCommentType {
   is_active?: boolean;
   created_at?: string;
 }
+
+export interface CommentWithUserType extends CommentType {
+  users: {
+    id: string;
+    name: string;
+  };
+}

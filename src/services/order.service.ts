@@ -155,6 +155,27 @@ export const orderService = {
       };
     }
   },
+
+  getOrderHistory: async(): Promise<PaginatedResponse<OrderType>> => {
+    try {
+      const query: PaginationQuery = {};
+      const response = await api.get('/orders/history', { params: query });
+      return {
+            data: response.data.data,
+            success: true,
+            error: response.data.error || "",
+            meta: response.data.meta,
+            links: response.data.links
+        };
+    } catch (error) {
+      const apiError = handleApiError(error);
+       return {
+            data: [],
+            success: false,
+            error: apiError.message
+        };
+    }
+  }
 }
 
 /**
