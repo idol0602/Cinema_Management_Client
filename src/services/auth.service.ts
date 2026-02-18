@@ -2,6 +2,8 @@ import api, { handleApiError } from "./api";
 import type {loginType, authResponse} from "@/types/auth.type.ts"
 import type { User } from "@/types/user.type.ts";
 
+const domain = process.env.NEXT_PUBLIC_APP_URL
+
 export const authService = {
     login: async(payload : loginType) : Promise<authResponse> => {
         try {
@@ -51,9 +53,60 @@ export const authService = {
             };
         }
     },
+    sendOtp: async(payload: { name: string; email: string; phone?: string; password: string }): Promise<{success: boolean, message: string, error: string | null}> => {
+        try {
+            const response = await api.post("/auth/send-otp", payload);
+            return {
+                success: response.data.success,
+                message: response.data.message || "OTP đã được gửi",
+                error: null
+            };
+        } catch (error) {
+            const apiError = handleApiError(error);
+            return {
+                success: false,
+                message: "",
+                error: apiError.message
+            };
+        }
+    },
+    verifyOtp: async(email: string, otp: string): Promise<{success: boolean, data: any, error: string | null}> => {
+        try {
+            const response = await api.post("/auth/verify-otp", { email, otp });
+            return {
+                success: response.data.success,
+                data: response.data.data,
+                error: null
+            };
+        } catch (error) {
+            const apiError = handleApiError(error);
+            return {
+                success: false,
+                data: null,
+                error: apiError.message
+            };
+        }
+    },
+    resendOtp: async(email: string): Promise<{success: boolean, message: string, error: string | null}> => {
+        try {
+            const response = await api.post("/auth/resend-otp", { email });
+            return {
+                success: response.data.success,
+                message: response.data.message || "OTP đã được gửi lại",
+                error: null
+            };
+        } catch (error) {
+            const apiError = handleApiError(error);
+            return {
+                success: false,
+                message: "",
+                error: apiError.message
+            };
+        }
+    },
     forgotPassword: async(email: string): Promise<{success: boolean, message: string, error: string | null}> => {
         try {
-            const response = await api.post("/auth/forgot-password", { email });
+            const response = await api.post("/auth/forgot-password", { email,domain });
             return {
                 success: response.data.success,
                 message: response.data.message,

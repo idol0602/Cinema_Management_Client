@@ -63,13 +63,6 @@ export function ForgotPasswordForm() {
           </p>
         </div>
 
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Lưu ý: Chức năng gửi email thực tế chưa được triển khai. Đây chỉ là giao diện demo.
-          </AlertDescription>
-        </Alert>
-
         <Link href="/auth/login">
           <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
             <ArrowLeft className="w-4 h-4 mr-2" />

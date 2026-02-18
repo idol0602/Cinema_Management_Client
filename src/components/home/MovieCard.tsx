@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { MovieType } from "@/types/movie.type"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,11 +16,12 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie }: MovieCardProps) {
+  const router = useRouter()
+
   const handleBooking = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    // TODO: Implement booking logic
-    console.log("Book ticket for movie:", movie.title)
+    router.push(`/show-times?movieId=${movie.id}`)
   }
 
   return (

@@ -1,22 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(_request: NextRequest) {
-  // Add custom header
-  const response = NextResponse.next();
-  response.headers.set('x-custom-header', 'my-custom-value');
+export function middleware(request: NextRequest) {
+  const {pathname} = request.nextUrl
 
-  // Example: Redirect logic
-  // if (request.nextUrl.pathname === '/old-path') {
-  //   return NextResponse.redirect(new URL('/new-path', request.url));
-  // }
+  const accessToken = request.cookies.get("access_token")?.value
+  if(pathname.startsWith("/profile") && !accessToken) {
+    console.log("chưa login")
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
 
-  // Example: Authentication check
-  // const token = request.cookies.get('token')?.value;
-  // if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
-  //   return NextResponse.redirect(new URL('/login', request.url));
-  // }
+  const response = NextResponse.next()
 
+  response.headers.set('x-custom-header', 'my-custom-value')
+  
   return response;
 }
 

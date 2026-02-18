@@ -58,7 +58,7 @@ export default function RootLayout({
             <Footer />
             <ChatPopup />
             <OnlineTracker />
-            <Toaster position="top-right" richColors />
+            <Toaster position="top-right" richColors closeButton/>
           </QueryProvider>
         </ThemeProvider>
       </body>

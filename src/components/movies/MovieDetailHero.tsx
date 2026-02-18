@@ -17,8 +17,7 @@ export function MovieDetailHero({ movie }: MovieDetailHeroProps) {
   const router = useRouter()
 
   const handleBooking = () => {
-    // TODO: Implement booking logic
-    console.log("Book ticket for movie:", movie.title)
+    router.push(`/show-times?movieId=${movie.id}`)
   }
 
   return (

@@ -10,7 +10,6 @@ export interface MovieType {
     image?: string,
     thumbnail?: string,
     trailer?: string,
-    movie_type_id: string, // Reference to movie_types table
     is_active?: boolean,
     created_at?: string,
 }
@@ -26,7 +25,6 @@ export interface CreateMovieType {
     image?: string,
     thumbnail?: string,
     trailer?: string,
-    movie_type_id: string, // Reference to movie_types table
     is_active?: boolean,
     created_at?: string,
 }
@@ -42,7 +40,16 @@ export interface UpdateMovieType {
     image?: string,
     thumbnail?: string,
     trailer?: string,
-    movie_type_id?: string, // Reference to movie_types table
     is_active?: boolean,
     created_at?: string,
+}
+
+export interface createMovieWithTypes {
+    movie: CreateMovieType,
+    movieTypes: string[]
+}
+
+export interface updateMovieWithTypes {
+    movie: UpdateMovieType,
+    movieTypes: string[]
 }

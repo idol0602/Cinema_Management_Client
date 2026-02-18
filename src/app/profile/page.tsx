@@ -1,27 +1,9 @@
-"use client"
-
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/store/useAuthStore"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileInfo } from "@/components/profile/ProfileInfo"
 import { OrderHistory } from "@/components/profile/OrderHistory"
 import { User, Receipt } from "lucide-react"
 
 export default function ProfilePage() {
-  const { isAuthenticated, isLoading } = useAuthStore()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login")
-    }
-  }, [isAuthenticated, isLoading, router])
-
-  if (!isAuthenticated) {
-    return null
-  }
-
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-8 pb-16">
       <div className="container mx-auto px-4 max-w-4xl">

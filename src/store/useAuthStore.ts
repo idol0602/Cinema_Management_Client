@@ -38,6 +38,10 @@ export const useAuthStore = create<AuthStore>()(
           set({ user: null, isAuthenticated: false, error: null });
         },
         updateProfile: async (updatedUser: User) => {
+          if (!updatedUser.id) {
+            throw new Error('User ID is required');
+          }
+          await authService.updateProfile(updatedUser.id, updatedUser);
           set({ user: updatedUser });
         },
         setError: (error: string | null) => {

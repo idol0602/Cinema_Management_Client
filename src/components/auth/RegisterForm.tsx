@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { registerSchema, type RegisterFormData } from "@/schemas/auth.schema"
 import { authService } from "@/services/auth.service"
-import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +15,6 @@ import { useRouter } from "next/navigation"
 
 export function RegisterForm() {
   const router = useRouter()
-  const { login } = useAuthStore()
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +33,8 @@ export function RegisterForm() {
       setIsLoading(true)
       setError(null)
       
-      const response = await authService.register({
+      // Send OTP instead of registering directly
+      const response = await authService.sendOtp({
         name: data.name,
         email: data.email,
         phone: data.phone,
@@ -48,13 +47,10 @@ export function RegisterForm() {
         return
       }
 
-      // Show success message
+      // Redirect to OTP verification page
       setSuccess(true)
-      
-      // Auto-login after successful registration
-      setTimeout(async () => {
-        await login(data.email, data.password)
-        router.push("/")
+      setTimeout(() => {
+        router.push(`/auth/verify-OTP?email=${encodeURIComponent(data.email)}`)
       }, 1500)
     } catch (err: any) {
       setError(err.message || "Đăng ký thất bại")
@@ -71,9 +67,6 @@ export function RegisterForm() {
           </div>
         </div>
         <div>
-          <h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">
-            Đăng ký thành công!
-          </h3>
           <p className="text-gray-600 dark:text-gray-400">
             Đang chuyển hướng...
           </p>

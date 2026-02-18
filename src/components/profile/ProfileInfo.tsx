@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useAuthStore } from "@/store/useAuthStore"
-import { userService } from "@/services/user.service"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
@@ -63,14 +62,9 @@ export function ProfileInfo() {
         return
       }
 
-      const response = await userService.update(user.id, updateData)
-      if (response.success) {
-        await updateProfile({ ...user, ...updateData, password: undefined } as User)
-        toast.success("Cập nhật thông tin thành công!")
-        setIsEditMode(false)
-      } else {
-        toast.error(response.error || "Không thể cập nhật thông tin")
-      }
+      await updateProfile({ ...user, ...updateData } as User)
+      toast.success("Cập nhật thông tin thành công")
+      setIsEditMode(false)
     } catch {
       toast.error("Đã có lỗi xảy ra")
     } finally {
