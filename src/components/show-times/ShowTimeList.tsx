@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useShowTimes } from "@/hooks/useShowTimes"
+import { useRooms } from "@/hooks/useRooms"
 import { showTimePaginateConfig } from "@/config/paginate/show_time.config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Search,
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -24,9 +24,10 @@ import {
   Calendar,
   MapPin,
   Ticket,
+  Monitor,
+  ArrowUpDown,
 } from "lucide-react"
 import type { ShowTimeType } from "@/types/showTime.type"
-import Image from "next/image"
 import Link from "next/link"
 
 interface ShowTimeListProps {
@@ -36,12 +37,15 @@ interface ShowTimeListProps {
 
 export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListProps) {
   const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState("")
   const [sortColumn, setSortColumn] = useState("")
   const [orderColumn, setOrderColumn] = useState("")
   const [dayTypeFilter, setDayTypeFilter] = useState("")
+  const [roomFilter, setRoomFilter] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+
+  // Fetch rooms for filter
+  const { data: rooms } = useRooms()
 
   // Build filter object
   const buildFilter = () => {
@@ -51,6 +55,9 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
     }
     if (dayTypeFilter) {
       filter.day_type = dayTypeFilter
+    }
+    if (roomFilter) {
+      filter.room_id = roomFilter
     }
     if (startDate) {
       filter.start_time = filter.start_time || {}
@@ -76,11 +83,9 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
   const { data: response, isLoading } = useShowTimes({
     page,
     limit: showTimePaginateConfig.defaultLimit,
-    search: searchQuery || undefined,
-    searchBy: searchQuery ? "movies.title" : undefined,
     sortBy: buildSortBy(),
     filter: buildFilter(),
-    initialData: page === 1 && !searchQuery && !dayTypeFilter && !startDate && !endDate
+    initialData: page === 1 && !dayTypeFilter && !roomFilter && !startDate && !endDate
       ? initialShowTimes
       : undefined,
   })
@@ -88,31 +93,23 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
   const showTimes = response?.data || []
   const meta = response?.meta
 
-  const handleSearch = () => {
-    setPage(1)
-  }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch()
-    }
-  }
 
   // Auto-search when filters change
   useEffect(() => {
     setPage(1)
-  }, [sortColumn, orderColumn, dayTypeFilter, startDate, endDate])
+  }, [sortColumn, orderColumn, dayTypeFilter, roomFilter, startDate, endDate])
 
   const handleClearFilter = (filterType: string) => {
     if (filterType === "sort") {
       setSortColumn("")
       setOrderColumn("")
     }
-    if (filterType === "search") {
-      setSearchQuery("")
-    }
     if (filterType === "dayType") {
       setDayTypeFilter("")
+    }
+    if (filterType === "room") {
+      setRoomFilter("")
     }
     if (filterType === "date") {
       setStartDate("")
@@ -124,16 +121,9 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
   const formatDateTime = (dateStr: string) => {
     const d = new Date(dateStr)
     return {
-      date: d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }),
+      date: d.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }),
       time: d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
     }
-  }
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return "N/A"
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}h ${mins}m`
   }
 
   const getDayTypeBadge = (dayType?: string) => {
@@ -162,17 +152,22 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            {/* Search Input */}
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Tìm kiếm theo tên phim..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pl-10 border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500"
-              />
-            </div>
+
+            {/* Room Filter */}
+            <Select value={roomFilter || "ALL"} onValueChange={(val) => setRoomFilter(val === "ALL" ? "" : val)}>
+              <SelectTrigger className="border-gray-300 dark:border-gray-600">
+                <MapPin className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Phòng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả phòng</SelectItem>
+                {rooms?.map((room) => (
+                  <SelectItem key={room.id} value={room.id || ""}>
+                    {room.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Day Type Filter */}
             <Select value={dayTypeFilter || "ALL"} onValueChange={(val) => setDayTypeFilter(val === "ALL" ? "" : val)}>
@@ -205,6 +200,19 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
               </SelectContent>
             </Select>
 
+            {/* Sort Order */}
+            <Select value={orderColumn || "DEFAULT"} onValueChange={(val) => setOrderColumn(val === "DEFAULT" ? "" : val)} disabled={!sortColumn}>
+              <SelectTrigger className="border-gray-300 dark:border-gray-600">
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Thứ tự" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DEFAULT">Mặc định</SelectItem>
+                <SelectItem value="ASC">Tăng dần</SelectItem>
+                <SelectItem value="DESC">Giảm dần</SelectItem>
+              </SelectContent>
+            </Select>
+
             {/* Start Date */}
             <Input
               type="date"
@@ -227,12 +235,12 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
           </div>
 
           {/* Active Filters */}
-          {(searchQuery || dayTypeFilter || sortColumn || startDate || endDate) && (
+          {(dayTypeFilter || roomFilter || sortColumn || startDate || endDate) && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Bộ lọc:</span>
-              {searchQuery && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("search")} className="h-7 text-xs">
-                  Tìm: &quot;{searchQuery}&quot; ×
+              {roomFilter && (
+                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("room")} className="h-7 text-xs">
+                  Phòng: {rooms?.find(r => r.id === roomFilter)?.name} ×
                 </Button>
               )}
               {dayTypeFilter && (
@@ -258,11 +266,11 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-200 dark:border-gray-700 space-y-3">
-                <Skeleton className="h-40 w-full rounded-lg" />
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow border border-gray-200 dark:border-gray-700 space-y-3">
                 <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-10 w-full rounded-lg" />
               </div>
             ))}
           </div>
@@ -274,84 +282,68 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
                 const end = showTime.end_time ? formatDateTime(showTime.end_time) : null
 
                 return (
-                  <Link
+                  <div
                     key={showTime.id}
-                    href={`/show-times/${showTime.id}`}
-                    className="group"
+                    className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-300 flex flex-col"
                   >
-                    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-300 h-full flex flex-col">
-                      {/* Movie Thumbnail */}
-                      <div className="relative h-44 bg-gray-100 dark:bg-gray-700">
-                        {showTime.movies?.thumbnail ? (
-                          <Image
-                            src={showTime.movies.thumbnail}
-                            alt={showTime.movies.title || ""}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Film className="w-12 h-12 text-gray-300 dark:text-gray-600" />
-                          </div>
-                        )}
-                        {/* Day Type Badge */}
-                        <div className="absolute top-3 right-3">
-                          {getDayTypeBadge(showTime.day_type)}
-                        </div>
-                      </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      {/* Movie Title */}
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3 line-clamp-1">
+                        {showTime.movies?.title || "N/A"}
+                      </h3>
 
-                      {/* Info */}
-                      <div className="p-4 flex-1 flex flex-col">
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-2 line-clamp-1 group-hover:text-orange-500 transition-colors">
-                          {showTime.movies?.title || "N/A"}
-                        </h3>
-
-                        {showTime.movies?.description && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
-                            {showTime.movies.description}
-                          </p>
-                        )}
-
-                        <div className="mt-auto space-y-2">
-                          {/* Time */}
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Clock className="w-4 h-4 text-orange-500" />
-                            <span className="font-semibold text-gray-900 dark:text-gray-100">{start.time}</span>
-                            {end && <span className="text-gray-400">— {end.time}</span>}
-                          </div>
-
-                          {/* Date */}
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Calendar className="w-4 h-4 text-orange-500" />
-                            <span>{start.date}</span>
-                          </div>
-
-                          {/* Room */}
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <MapPin className="w-4 h-4 text-orange-500" />
-                            <span>{showTime.rooms?.name || "N/A"}</span>
-                          </div>
-
-                          {/* Duration */}
-                          {showTime.movies?.duration && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                              <Film className="w-4 h-4 text-orange-500" />
-                              <span>{formatDuration(showTime.movies.duration)}</span>
-                            </div>
+                      <div className="space-y-2.5 flex-1">
+                        {/* Room & Format */}
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">
+                            {showTime.rooms?.name || "N/A"}
+                          </span>
+                          {showTime.rooms && (showTime.rooms as any).formats?.name && (
+                            <Badge variant="outline" className="text-xs ml-1">
+                              <Monitor className="w-3 h-3 mr-1" />
+                              {(showTime.rooms as any).formats.name}
+                            </Badge>
                           )}
                         </div>
 
-                        {/* CTA */}
-                        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                          <div className="flex items-center justify-center gap-2 text-orange-500 font-semibold text-sm group-hover:text-orange-600 transition-colors">
-                            <Ticket className="w-4 h-4" />
-                            Đặt vé ngay
-                          </div>
+                        {/* Date */}
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <Calendar className="w-4 h-4 text-orange-500 shrink-0" />
+                          <span>{start.date}</span>
+                          <span className="ml-auto">{getDayTypeBadge(showTime.day_type)}</span>
+                        </div>
+
+                        {/* Time Range */}
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="w-4 h-4 text-orange-500 shrink-0" />
+                          <span className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                            {start.time}
+                          </span>
+                          {end && (
+                            <>
+                              <span className="text-gray-400">—</span>
+                              <span className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                                {end.time}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
+
+                      {/* CTA */}
+                      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <Link href={`/show-times/${showTime.id}`} className="block">
+                          <Button
+                            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-md"
+                          >
+                            <Ticket className="w-4 h-4 mr-2" />
+                            Đặt vé
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
-                  </Link>
+                  </div>
                 )
               })}
             </div>

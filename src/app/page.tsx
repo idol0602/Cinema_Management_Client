@@ -9,12 +9,15 @@ import type { MovieTypeType } from "@/types/movieType.type"
 
 export default async function HomePage() {
   // Server-side data fetching using existing services
-  const [slidesResponse, moviesResponse, movieTypesResponse] = await Promise.all([
+  const [slidesResponse, nowShowingResponse, comingSoonResponse, movieTypesResponse] = await Promise.all([
     slideService.getAll(),
-    movieService.findAndPaginate({
+    movieService.findNowShowing({
       page: 1,
       limit: 10,
-      filter: { is_active: "true" }
+    }),
+    movieService.findComingSoon({
+      page: 1,
+      limit: 10,
     }),
     movieTypeService.findAll()
   ])
@@ -22,14 +25,16 @@ export default async function HomePage() {
   // Extract data with type safety
   const initialSlides = (Array.isArray(slidesResponse.data) ? slidesResponse.data as SlideType[] : [])
     .filter((slide: SlideType) => slide.is_active)
-  const initialMovies = Array.isArray(moviesResponse.data) ? moviesResponse.data as MovieType[] : []
+  const initialNowShowing = Array.isArray(nowShowingResponse.data) ? nowShowingResponse.data as MovieType[] : []
+  const initialComingSoon = Array.isArray(comingSoonResponse.data) ? comingSoonResponse.data as MovieType[] : []
   const initialMovieTypes = Array.isArray(movieTypesResponse.data) ? movieTypesResponse.data as MovieTypeType[] : []
 
   return (
     <main className="min-h-screen">
       <HeroCarousel initialSlides={initialSlides} />
       <MovieList 
-        initialMovies={initialMovies} 
+        initialNowShowing={initialNowShowing}
+        initialComingSoon={initialComingSoon}
         initialMovieTypes={initialMovieTypes}
       />
     </main>

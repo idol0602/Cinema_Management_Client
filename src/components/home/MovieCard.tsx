@@ -68,6 +68,31 @@ export function MovieCard({ movie }: MovieCardProps) {
           <h3 className="font-bold text-lg line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
             {movie.title}
           </h3>
+
+          {/* Genres */}
+          <div className="flex flex-wrap gap-1 min-h-[22px]">
+            {(movie as any).movie_movie_types && (movie as any).movie_movie_types.length > 0 ? (
+              <>
+                {(movie as any).movie_movie_types.slice(0, 2).map((mmt: any) => (
+                  <Badge
+                    key={mmt.id || mmt.movie_type_id}
+                    variant="outline"
+                    className="text-xs px-1.5 py-0 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300"
+                  >
+                    {mmt.movie_types?.type || mmt.movie_type_id}
+                  </Badge>
+                ))}
+                {(movie as any).movie_movie_types.length > 2 && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-1.5 py-0 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                  >
+                    +{(movie as any).movie_movie_types.length - 2}
+                  </Badge>
+                )}
+              </>
+            ) : null}
+          </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             {movie.duration && (

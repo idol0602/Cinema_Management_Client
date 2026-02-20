@@ -1,14 +1,18 @@
 export const moviePaginateConfig = {
   // dùng combobox chọn tiêu chí sort
   sortableColumns: [
-    "title",
-    "release_date",
-    "rating",
-    "duration",
-    "created_at",
+    { value: "title", label: "Tên phim" },
+    { value: "release_date", label: "Ngày phát hành" },
+    { value: "rating", label: "Đánh giá" },
+    { value: "duration", label: "Thời lượng" },
+    { value: "created_at", label: "Ngày tạo" },
   ],
   // dùng ô search tìm kiếm
-  searchableColumns: ["title", "description", "director"],
+  searchableColumns: [
+    { value: "title", label: "Tên phim" },
+    { value: "description", label: "Mô tả" },
+    { value: "director", label: "Đạo diễn" },
+  ],
   // dùng combobox chọn tiêu chí lọc
   filterableColumns: {
     is_active: true,
@@ -25,15 +29,19 @@ export const moviePaginateConfig = {
 export const moviePaginateConfigWithStatus = {
   // SORT
   sortableColumns: [
-    "title",
-    "release_date",
-    "rating",
-    "duration",
-    "created_at",
+    { value: "title", label: "Tên phim" },
+    { value: "release_date", label: "Ngày phát hành" },
+    { value: "rating", label: "Đánh giá" },
+    { value: "duration", label: "Thời lượng" },
+    { value: "created_at", label: "Ngày tạo" },
   ],
 
   // SEARCH
-  searchableColumns: ["title", "description", "director"],
+  searchableColumns: [
+    { value: "title", label: "Tên phim" },
+    { value: "description", label: "Mô tả" },
+    { value: "director", label: "Đạo diễn" },
+  ],
 
   // FILTER (CHỈ column thuộc movies)
   filterableColumns: {

@@ -169,7 +169,7 @@ export const movieService = {
 
   findNowShowing: async(query: PaginationQuery): Promise<PaginatedResponse<MovieType>> => {
     try {
-      const response = await api.get("/movies/now-showingg", { params: query });
+      const response = await api.get("/movies/now-showing", { params: query });
       return {
         data: response.data.data,
         success: true,

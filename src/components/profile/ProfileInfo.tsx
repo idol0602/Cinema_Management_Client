@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import type { User } from "@/types/user.type"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import {
   Mail,
   Phone,
@@ -18,6 +19,7 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react"
+import { AvatarFallback } from "@radix-ui/react-avatar"
 
 export function ProfileInfo() {
   const { user, updateProfile } = useAuthStore()
@@ -95,9 +97,9 @@ export function ProfileInfo() {
     <div className="space-y-8">
       {/* Avatar & Basic Info */}
       <div className="flex items-center gap-6 pb-8 border-b border-gray-200 dark:border-gray-700">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/30 text-4xl font-bold uppercase flex-shrink-0">
-          {user?.name?.charAt(0) || "U"}
-        </div>
+        <Avatar className="h-24 w-24 border-2 border-orange-500/20 hover:border-orange-500/50 transition-colors">
+          <AvatarImage className="text-4xl font-bold" name={user?.name || ""} />
+        </Avatar>
         <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
             {user?.name || "Người dùng"}
