@@ -1,7 +1,7 @@
 import api, { handleApiError } from "./api"
 import type {serviceResponse} from "../types/api.type"
 import type {PaginationQuery, PaginatedResponse} from "@/types/pagination.type"
-import type { CreateOrderType, UpdateOrderType,OrderType } from "@/types/order.type"
+import type { CreateOrderType, UpdateOrderType,OrderType,CreatePaymentUrlType } from "@/types/order.type"
 
 export const orderService = {
   getAll: async () : Promise<serviceResponse> => {
@@ -158,6 +158,7 @@ export const orderService = {
 
   getOrderHistory: async(query: PaginationQuery): Promise<PaginatedResponse<OrderType>> => {
     try {
+      console.log("Fetching order history with query:", query);
       const response = await api.get('/orders/history', { params: query });
       console.log(response)
       return {
@@ -175,7 +176,25 @@ export const orderService = {
             error: apiError.message
         };
     }
-  }
+  },
+
+  createPaymentUrl: async (payload: CreatePaymentUrlType): Promise<serviceResponse> => {
+    try {
+      const response = await api.post('/orders/create-payment-url', payload);
+      return {
+        data: response.data.data,
+        success: true,
+        error: response.data.error,
+      };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return {
+        data: null,
+        success: false,
+        error: apiError.message,
+      };
+    }
+  },
 }
 
 /**

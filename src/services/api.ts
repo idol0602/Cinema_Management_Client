@@ -3,10 +3,11 @@ import type { AxiosInstance } from 'axios';
 import qs from 'qs';
 
 const api : AxiosInstance  = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
   withCredentials: true,
   paramsSerializer: (params) =>

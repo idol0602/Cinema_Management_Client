@@ -1,4 +1,5 @@
-export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELED" | "REFUND_PENDING" | "REFUNDED";
+import { PaymentMethod } from "./paymentMethos.type";
+import { PaymentStatus } from "./paymentStatus.type";
 
 export interface OrderType {
   id?: string;
@@ -7,7 +8,7 @@ export interface OrderType {
   movie_id: string; // Reference to movies table
   service_vat?: number;
   payment_status?: PaymentStatus;
-  payment_method?: string;
+  payment_method?: PaymentMethod;
   trans_id?: string;
   total_price: number;
   created_at?: string;
@@ -184,4 +185,15 @@ export interface OrderDetails {
       name: string;
     };
   } | null;
+}
+
+export interface CreatePaymentUrlType {
+  orderId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+}
+
+export interface PaymentUrlResponseData {
+  paymentURL: string;
+  message?: string;
 }

@@ -1,0 +1,1 @@
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELED" | "REFUND_PENDING" | "REFUNDED";

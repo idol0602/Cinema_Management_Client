@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'sonner';
 
@@ -18,10 +18,11 @@ import type { MenuItemType } from '@/types/menuItem.type';
 import type { EventType } from '@/types/event.type';
 import type { DiscountType } from '@/types/discount.type';
 import type { TicketPriceType } from '@/types/ticketPrice.type';
-import type { OrderType, CreateOrderType } from '@/types/order.type';
+import type { OrderType, PaymentUrlResponseData } from '@/types/order.type';
 import type { CreateTicketType } from '@/types/ticket.type';
 import type { CreateComboItemInTicketType } from '@/types/comboItemInTicket.type';
 import type { CreateMenuItemInTicketType } from '@/types/menuItemInTicket.type';
+import { PaymentMethod } from '@/types/paymentMethos.type';
 
 export interface EventWithDiscount extends EventType {
   discount?: DiscountType | null;
@@ -75,6 +76,7 @@ interface BookingStore {
 
   // Order
   orderCreating: OrderType | null;
+  selectedPaymentMethod: string;
 
   // Cached combo details
   selectedComboDetails: Map<string, ComboDetailType>;
@@ -100,7 +102,7 @@ interface BookingStore {
   canSelectSeat: (seat: SeatDetail) => boolean;
   isSeatSelected: (seat: SeatDetail) => boolean;
 
-  handleHoldSeats: (userId: string) => Promise<void>;
+  handleHoldSeats: () => Promise<void>;
   handleCancelHold: () => Promise<void>;
   startCountdown: (seconds: number) => void;
   stopCountdown: () => void;
@@ -115,52 +117,57 @@ interface BookingStore {
   setEventSearch: (search: string) => void;
 
   setConfirmDialogOpen: (open: boolean) => void;
+  setPaymentMethod: (method: string) => void;
 
   getPrice: (formatId: string, seatTypeId: string, dayType: string) => number;
   getTicketPriceId: (formatId: string, seatTypeId: string, dayType: string) => string;
 
   handlePayment: (userId: string) => Promise<any>;
-  generateOrderData: (userId: string) => any;
+  createOrder: (userId: string) => Promise<any>;
+  generateOrderData: (userId: string, orderId: string) => any;
 
   resetBooking: () => void;
   refreshShowTimeDetail: (showTimeId: string) => Promise<void>;
+  handleAfterEndProcess: (showTimeId: string) => Promise<void>;
 }
 
 const HOLD_TTL_SECONDS = 600;
 
 export const useBookingStore = create<BookingStore>()(
   devtools(
-    (set, get) => ({
-      // Initial state
-      showTimeDetail: null,
-      loading: false,
-      loadingCombos: false,
-      loadingMenuItems: false,
-      loadingEvents: false,
-      loadingExtras: false,
-      prices: new Map(),
-      ticketPrices: [],
-      combos: [],
-      selectedCombos: [],
-      comboDiscounts: new Map(),
-      comboSearch: '',
-      menuItems: [],
-      selectedMenuItems: [],
-      menuItemSearch: '',
-      events: [],
-      discounts: [],
-      selectedEvent: null,
-      eventSearch: '',
-      selectedSeats: [],
-      isHolding: false,
-      heldSeatIds: [],
-      holdCountdown: 0,
-      holdLoading: false,
-      timeRemain: null,
-      orderCreating: null,
-      selectedComboDetails: new Map(),
-      confirmDialogOpen: false,
-      _countdownInterval: null,
+    persist(
+      (set, get) => ({
+        // Initial state
+        showTimeDetail: null,
+        loading: false,
+        loadingCombos: false,
+        loadingMenuItems: false,
+        loadingEvents: false,
+        loadingExtras: false,
+        prices: new Map(),
+        ticketPrices: [],
+        combos: [],
+        selectedCombos: [],
+        comboDiscounts: new Map(),
+        comboSearch: '',
+        menuItems: [],
+        selectedMenuItems: [],
+        menuItemSearch: '',
+        events: [],
+        discounts: [],
+        selectedEvent: null,
+        eventSearch: '',
+        selectedSeats: [],
+        isHolding: false,
+        heldSeatIds: [],
+        holdCountdown: 0,
+        holdLoading: false,
+        timeRemain: null,
+        orderCreating: null,
+        selectedPaymentMethod: '',
+        selectedComboDetails: new Map(),
+        confirmDialogOpen: false,
+        _countdownInterval: null,
 
       loadShowTimeDetail: async (showTimeId: string) => {
         set({ loading: true });
@@ -367,8 +374,8 @@ export const useBookingStore = create<BookingStore>()(
         return get().selectedSeats.some((s) => s.id === seat.id);
       },
 
-      handleHoldSeats: async (userId: string) => {
-        const { selectedSeats, showTimeDetail, selectedEvent, startCountdown } = get();
+      handleHoldSeats: async () => {
+        const { selectedSeats, startCountdown } = get();
         if (selectedSeats.length === 0) {
           toast.error('Vui lòng chọn ít nhất một ghế');
           return;
@@ -380,23 +387,6 @@ export const useBookingStore = create<BookingStore>()(
             .filter(Boolean) as string[];
 
           const response = await showTimeSeatService.bulkHoldSeats(seatIds, HOLD_TTL_SECONDS);
-
-          const orderResponse = await orderService.create({
-            discount_id: selectedEvent?.discount?.id || null,
-            user_id: userId,
-            movie_id: showTimeDetail?.movie?.id as string,
-            service_vat: 0,
-            payment_status: 'PENDING',
-            payment_method: '',
-            trans_id: null,
-            total_price: 0,
-            created_at: new Date().toISOString(),
-            requested_at: new Date().toISOString(),
-          } as CreateOrderType);
-
-          if (orderResponse.success && orderResponse.data) {
-            set({ orderCreating: orderResponse.data as OrderType });
-          }
 
           if (response.success) {
             set({ isHolding: true, heldSeatIds: seatIds });
@@ -414,15 +404,11 @@ export const useBookingStore = create<BookingStore>()(
       },
 
       handleCancelHold: async () => {
-        const { heldSeatIds, orderCreating, stopCountdown } = get();
+        const { heldSeatIds, stopCountdown } = get();
         if (heldSeatIds.length === 0) return;
         set({ holdLoading: true });
         try {
           const response = await showTimeSeatService.bulkCancelHoldSeats(heldSeatIds);
-
-          if (orderCreating?.id) {
-            await orderService.update(orderCreating.id, { payment_status: 'CANCELED' });
-          }
 
           if (response.success) {
             stopCountdown();
@@ -432,6 +418,7 @@ export const useBookingStore = create<BookingStore>()(
               holdCountdown: 0,
               selectedSeats: [],
               orderCreating: null,
+              selectedPaymentMethod: '',
             });
             toast.success('Đã hủy giữ ghế');
           } else {
@@ -561,6 +548,8 @@ export const useBookingStore = create<BookingStore>()(
 
       setConfirmDialogOpen: (open: boolean) => set({ confirmDialogOpen: open }),
 
+      setPaymentMethod: (method: string) => set({ selectedPaymentMethod: method }),
+
       getPrice: (formatId: string, seatTypeId: string, dayType: string) => {
         return get().prices.get(`${formatId}-${seatTypeId}-${dayType}`) || 0;
       },
@@ -572,9 +561,9 @@ export const useBookingStore = create<BookingStore>()(
         return tp?.id || '';
       },
 
-      generateOrderData: (userId: string) => {
+      generateOrderData: (userId: string, orderId: string) => {
         const state = get();
-        const { orderCreating, selectedSeats, selectedCombos, selectedMenuItems, selectedEvent, showTimeDetail } = state;
+        const { selectedSeats, selectedCombos, selectedMenuItems, selectedEvent, showTimeDetail, selectedPaymentMethod } = state;
 
         const seatTotal = selectedSeats.reduce(
           (sum, s) =>
@@ -605,12 +594,13 @@ export const useBookingStore = create<BookingStore>()(
         const total = afterDiscount + serviceVat;
 
         const order: OrderType = {
-          id: orderCreating?.id as string,
+          id: orderId,
           user_id: userId,
           movie_id: showTimeDetail?.movie?.id as string,
           discount_id: selectedEvent?.discount?.id as string,
           service_vat: serviceVat,
           total_price: total,
+          payment_method: selectedPaymentMethod as PaymentMethod,
         };
 
         const tickets: CreateTicketType[] = selectedSeats.map((seat) => ({
@@ -619,17 +609,17 @@ export const useBookingStore = create<BookingStore>()(
             seat.seat_type?.id as string,
             showTimeDetail?.day_type as string
           ),
-          order_id: orderCreating?.id as string,
+          order_id: orderId,
           showtime_seat_id: seat.show_time_seat?.id as string,
         }));
 
         const comboItemInTickets: CreateComboItemInTicketType[] = selectedCombos.map((combo) => ({
-          order_id: orderCreating?.id as string,
+          order_id: orderId,
           combo_id: combo.id as string,
         }));
 
         const menuItemInTickets: CreateMenuItemInTicketType[] = selectedMenuItems.map((m) => ({
-          order_id: orderCreating?.id as string,
+          order_id: orderId,
           item_id: m.item.id as string,
           quantity: m.quantity,
           unit_price: m.item.price,
@@ -646,10 +636,17 @@ export const useBookingStore = create<BookingStore>()(
         return { order, tickets, comboItemInTickets, menuItemInTickets, showTime };
       },
 
-      handlePayment: async (userId: string) => {
+      createOrder: async (userId: string) => {
         const state = get();
-        const { showTimeDetail } = state;
+        const { showTimeDetail, selectedPaymentMethod } = state;
 
+        // Validate payment method
+        if (!selectedPaymentMethod) {
+          toast.error('Vui lòng chọn phương thức thanh toán');
+          return null;
+        }
+
+        // Validate booking time
         if (showTimeDetail?.start_time) {
           const timeValidation = validateBookingTime(showTimeDetail.start_time, 5);
           if (!timeValidation.valid) {
@@ -659,9 +656,127 @@ export const useBookingStore = create<BookingStore>()(
           }
         }
 
-        const orderData = state.generateOrderData(userId);
+        try {
+          // 1. Build full order payload (order + tickets + combos + menuItems + showTime)
+          //    using a temporary orderId — the backend will generate a real one
+          const orderData = state.generateOrderData(userId, '');
+
+          // Adjust order fields for creation (backend expects CreateOrderType fields)
+          const createPayload = {
+            order: {
+              ...orderData.order,
+              payment_status: 'PENDING' as const,
+              trans_id: null,
+              created_at: new Date().toISOString(),
+              requested_at: new Date().toISOString(),
+            },
+            tickets: orderData.tickets.map((t: any) => ({
+              ticket_price_id: t.ticket_price_id,
+              showtime_seat_id: t.showtime_seat_id,
+            })),
+            comboItemInTickets: orderData.comboItemInTickets.map((c: any) => ({
+              combo_id: c.combo_id,
+            })),
+            menuItemInTickets: orderData.menuItemInTickets.map((m: any) => ({
+              item_id: m.item_id,
+              quantity: m.quantity,
+              unit_price: m.unit_price,
+              total_price: m.total_price,
+            })),
+            showTime: orderData.showTime,
+          };
+
+          // 2. Create order with all related data
+          const orderResponse = await orderService.create(createPayload as any);
+
+          if (!orderResponse.success || !orderResponse.data) {
+            const errorData = orderResponse.error;
+            if (typeof errorData === 'object' && (errorData as any)?.code === 'INSUFFICIENT_STOCK') {
+              toast.error((errorData as any).message || 'Không đủ số lượng trong kho');
+            } else {
+              toast.error(typeof errorData === 'string' ? errorData : 'Không thể tạo đơn hàng');
+            }
+            return null;
+          }
+
+          const createdData = orderResponse.data as any;
+          const createdOrder = createdData.order as OrderType;
+          set({ orderCreating: createdOrder });
+
+          // 3. Create payment URL and redirect to payment gateway
+          const paymentUrlResponse = await orderService.createPaymentUrl({
+            orderId: createdOrder.id as string,
+            amount: createdOrder.total_price,
+            paymentMethod: selectedPaymentMethod as PaymentMethod,
+          });
+
+          if (!paymentUrlResponse.success || !paymentUrlResponse.data) {
+            toast.error('Không thể tạo URL thanh toán');
+            return null;
+          }
+
+          const paymentUrlData = paymentUrlResponse.data as PaymentUrlResponseData;
+          const paymentUrl = paymentUrlData.paymentURL;
+
+          // Close dialog before redirect
+          set({ confirmDialogOpen: false });
+          state.stopCountdown();
+
+          window.location.href = paymentUrl;
+        } catch (error) {
+          console.error('Create order error:', error);
+          toast.error('Có lỗi xảy ra khi tạo đơn hàng');
+          return null;
+        }
+      },
+
+      handlePayment: async (userId: string) => {
+        const state = get();
+        const { showTimeDetail, selectedPaymentMethod, orderCreating } = state;
+
+        // Validate payment method
+        if (!selectedPaymentMethod) {
+          toast.error('Vui lòng chọn phương thức thanh toán');
+          return null;
+        }
+
+        // Validate booking time
+        if (showTimeDetail?.start_time) {
+          const timeValidation = validateBookingTime(showTimeDetail.start_time, 5);
+          if (!timeValidation.valid) {
+            toast.error(timeValidation.message);
+            set({ confirmDialogOpen: false });
+            return null;
+          }
+        }
 
         try {
+          // 1. Create order first with calculated totals
+          // const orderResponse = await orderService.create({
+          //   discount_id: selectedEvent?.discount?.id || null,
+          //   user_id: userId,
+          //   movie_id: showTimeDetail?.movie?.id as string,
+          //   service_vat: 0,
+          //   payment_status: 'PENDING',
+          //   payment_method: selectedPaymentMethod,
+          //   trans_id: null,
+          //   total_price: 0,
+          //   created_at: new Date().toISOString(),
+          //   requested_at: new Date().toISOString(),
+          // } as CreateOrderType);
+
+          // if (!orderResponse.success || !orderResponse.data) {
+          //   toast.error('Không thể tạo đơn hàng');
+          //   return null;
+          // }
+
+          // const createdOrder = orderResponse.data as OrderType;
+          // set({ orderCreating: createdOrder });
+
+          // 2. Generate order data with actual orderId and calculated totals
+          const orderData = state.generateOrderData(userId, orderCreating?.id as string);
+
+          // 3. Process payment via RPC
           const response = await orderService.processOrderPayment(orderData);
 
           if (response.success && response.data) {
@@ -670,6 +785,10 @@ export const useBookingStore = create<BookingStore>()(
             set({ confirmDialogOpen: false });
             return response.data;
           } else {
+            // Cancel order on failure
+            if (orderCreating?.id) {
+              await orderService.update(orderCreating.id, { payment_status: 'CANCELED' });
+            }
             if (typeof response.error === 'string') {
               toast.error(response.error);
             } else if ((response as any).error?.message) {
@@ -699,6 +818,7 @@ export const useBookingStore = create<BookingStore>()(
           selectedEvent: null,
           comboDiscounts: new Map(),
           orderCreating: null,
+          selectedPaymentMethod: '',
           selectedComboDetails: new Map(),
           confirmDialogOpen: false,
           _countdownInterval: null,
@@ -715,7 +835,26 @@ export const useBookingStore = create<BookingStore>()(
           console.error('Error refreshing showtime:', error);
         }
       },
-    }),
+
+        handleAfterEndProcess: async (showTimeId: string) => {
+          const state = get();
+          await state.handleCancelHold();
+          state.resetBooking();
+          state.refreshShowTimeDetail(showTimeId);
+        }
+      }),
+      {
+        name: 'booking-store',
+        storage: createJSONStorage(() => localStorage),
+        partialize: (state) => ({
+          heldSeatIds: state.heldSeatIds,
+          selectedSeats: state.selectedSeats,
+          showTimeDetail: state.showTimeDetail,
+          selectedPaymentMethod: state.selectedPaymentMethod,
+          orderCreating: state.orderCreating,
+        }),
+      }
+    ),
     { name: 'booking-store' }
   )
 );

@@ -53,6 +53,8 @@ import {
 } from '@/store/useBookingStore';
 import type { SeatDetail } from '@/types/showTime.type';
 import { getSeatTypeColor, seatStatusColors } from '@/config/seatTypeColors';
+import { PAYMENT_METHODS } from '@/lib/paymentMethods';
+import Image from 'next/image';
 
 interface SeatBookingPageProps {
   showTimeId: string;
@@ -99,9 +101,13 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
     setConfirmDialogOpen,
     getPrice,
     handlePayment,
+    createOrder,
     resetBooking,
     refreshShowTimeDetail,
     stopCountdown,
+    selectedPaymentMethod,
+    setPaymentMethod,
+    handleAfterEndProcess,
   } = useBookingStore();
 
   const totals = useCalculatedTotals();
@@ -113,12 +119,19 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
   const [comboDetailDialogOpen, setComboDetailDialogOpen] = useState(false);
   const [selectedComboDetail, setSelectedComboDetail] = useState<any>(null);
 
-  // Load showtime details
+  // Load showtime details & cleanup on unmount
   useEffect(() => {
     if (!showTimeId) return;
     loadShowTimeDetail(showTimeId);
+
     return () => {
-      stopCountdown();
+      // If user leaves the page while holding seats, try to cancel hold
+      // and reset the store state
+      const { heldSeatIds, handleCancelHold, resetBooking } = useBookingStore.getState();
+      if (heldSeatIds.length > 0) {
+        handleCancelHold();
+      }
+      resetBooking();
     };
   }, [showTimeId]);
 
@@ -228,10 +241,18 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
     }
     const result = await handlePayment(user.id);
     if (result) {
-      // Payment success — reset and refresh
-      resetBooking();
-      refreshShowTimeDetail(showTimeId);
+      await handleAfterEndProcess(showTimeId);
     }
+  };
+
+  const handleCreateOrderPending = async () => {
+    if (!user?.id) {
+      toast.error('Vui lòng đăng nhập để thanh toán');
+      return;
+    }
+    const result = await createOrder(user.id);
+    
+    // call api to create payment url and redirect to payment page
   };
 
   const onBack = async () => {
@@ -841,12 +862,74 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
                   </div>
                 </div>
 
+                {/* Payment Method Selection */}
+                {isHolding && (
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      <CreditCard className="h-3 w-3" />
+                      Phương thức thanh toán
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod(PAYMENT_METHODS.MOMO)}
+                        className={clsx(
+                          'flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all duration-200',
+                          selectedPaymentMethod === PAYMENT_METHODS.MOMO
+                            ? 'border-pink-400 bg-pink-50 shadow-md dark:bg-pink-950/30'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <Image
+                          src="/images/momo-logo-momo-mobile-money-logo-4kdLuUYj.jpg"
+                          alt="MoMo"
+                          width={48}
+                          height={48}
+                          className="rounded-lg object-contain"
+                        />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">MoMo</span>
+                        {selectedPaymentMethod === PAYMENT_METHODS.MOMO && (
+                          <CheckCircle className="h-4 w-4 text-pink-500" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod(PAYMENT_METHODS.VNPAY)}
+                        className={clsx(
+                          'flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all duration-200',
+                          selectedPaymentMethod === PAYMENT_METHODS.VNPAY
+                            ? 'border-blue-400 bg-blue-50 shadow-md dark:bg-blue-950/30'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
+                        )}
+                      >
+                        <Image
+                          src="/images/Logo-VNPAY-QR-1.webp"
+                          alt="VNPay"
+                          width={48}
+                          height={48}
+                          className="rounded-lg object-contain"
+                        />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">VNPay</span>
+                        {selectedPaymentMethod === PAYMENT_METHODS.VNPAY && (
+                          <CheckCircle className="h-4 w-4 text-blue-500" />
+                        )}
+                      </button>
+                    </div>
+                    {!selectedPaymentMethod && (
+                      <p className="text-center text-xs text-amber-600">
+                        Vui lòng chọn phương thức thanh toán
+                      </p>
+                    )}
+                    <Separator />
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="space-y-2 pt-2">
                   {!isHolding ? (
                     <Button
                       className="h-11 w-full bg-orange-500 text-base hover:bg-orange-600"
-                      onClick={() => user?.id && handleHoldSeats(user.id)}
+                      onClick={() => handleHoldSeats()}
                       disabled={selectedSeats.length === 0 || holdLoading || !user?.id}
                     >
                       <Lock className="mr-2 h-4 w-4" />
@@ -1075,7 +1158,7 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
               Hủy
             </Button>
             <Button
-              onClick={onPayment}
+              onClick={handleCreateOrderPending}
               className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
