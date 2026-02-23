@@ -10,10 +10,13 @@ import {
   Ban,
   Home,
   ClipboardList,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/store/useBookingStore";
+import { OrderDetailDialog } from "@/components/profile/OrderDetailDialog";
+import { useState } from "react";
 
 type PaymentStatus = "PAID" | "FAILED" | "CANCELLED" | "EXPIRED" | string;
 
@@ -85,6 +88,8 @@ function PaymentResultContent() {
   const config = STATUS_MAP[status] || STATUS_MAP.FAILED;
   const methodLabel = PAYMENT_METHOD_LABELS[method] || method;
   const isSuccess = status === "PAID";
+
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Cancel held seats and reset booking store on page load
   useEffect(() => {
@@ -199,31 +204,53 @@ function PaymentResultContent() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full pt-2 animate-in fade-in slide-in-from-bottom-3 duration-500 delay-[400ms]">
-              <Button
-                asChild
-                variant={isSuccess ? "default" : "outline"}
-                className="flex-1 gap-2"
-              >
-                <Link href="/">
-                  <Home className="w-4 h-4" />
-                  Về trang chủ
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant={isSuccess ? "outline" : "default"}
-                className="flex-1 gap-2"
-              >
-                <Link href="/profile">
-                  <ClipboardList className="w-4 h-4" />
-                  Lịch sử đơn hàng
-                </Link>
-              </Button>
+            <div className="flex flex-col gap-3 w-full pt-2 animate-in fade-in slide-in-from-bottom-3 duration-500 delay-[400ms]">
+              {isSuccess && orderId && (
+                <Button
+                  onClick={() => setIsDetailOpen(true)}
+                  className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 shadow-lg shadow-emerald-500/20 py-6 text-base font-semibold"
+                >
+                  <Eye className="w-5 h-5" />
+                  Xem chi tiết hóa đơn
+                </Button>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="flex-1 gap-2 hover:bg-muted/50 transition-colors py-6"
+                >
+                  <Link href="/">
+                    <Home className="w-4 h-4" />
+                    Về trang chủ
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="flex-1 gap-2 hover:bg-muted/50 transition-colors py-6"
+                >
+                  <Link href="/profile">
+                    <ClipboardList className="w-4 h-4" />
+                    Lịch sử đơn hàng
+                  </Link>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Decorative elements */}
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -z-20 pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-20 pointer-events-none" />
       </div>
+
+      <OrderDetailDialog
+        orderId={orderId}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
     </main>
   );
 }

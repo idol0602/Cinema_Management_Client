@@ -46,6 +46,7 @@ function MovieTabContent({
   emptyMessage,
   movieTypeColumns,
   setMovieTypeColumns,
+  selectType,
 }: {
   hookResult: any
   isLoading: boolean
@@ -63,6 +64,7 @@ function MovieTabContent({
   emptyMessage: string
   movieTypeColumns: string[]
   setMovieTypeColumns: (c: string[]) => void
+  selectType: "now-showing" | "coming-soon"
 }) {
   const movies = hookResult?.data || []
   const meta = hookResult?.meta
@@ -195,7 +197,7 @@ function MovieTabContent({
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6">
             {movies.map((movie: MovieType) => (
-              <MovieCard key={movie.id} movie={movie} />
+              <MovieCard key={movie.id} movie={movie} badgeTitle={selectType === "now-showing" ? "Đang chiếu" : "Sắp chiếu"}/>
             ))}
           </div>
 
@@ -276,6 +278,7 @@ function MovieTabContent({
 }
 
 export function MovieList({ initialNowShowing = [], initialComingSoon = [], initialMovieTypes = [] }: MovieListProps) {
+  const [selectType, setSelectType] = useState<"now-showing" | "coming-soon">("now-showing")
   // Now Showing state
   const [nsPage, setNsPage] = useState(1)
   const [nsSearch, setNsSearch] = useState("")
@@ -361,6 +364,7 @@ export function MovieList({ initialNowShowing = [], initialComingSoon = [], init
             <TabsTrigger
               value="now-showing"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all font-semibold"
+              onClick={() => setSelectType("now-showing")}
             >
               <Film className="w-4 h-4" />
               Phim Đang Chiếu
@@ -368,6 +372,7 @@ export function MovieList({ initialNowShowing = [], initialComingSoon = [], init
             <TabsTrigger
               value="coming-soon"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-lg transition-all font-semibold"
+              onClick={() => setSelectType("coming-soon")}
             >
               <Clapperboard className="w-4 h-4" />
               Phim Sắp Chiếu
@@ -392,6 +397,7 @@ export function MovieList({ initialNowShowing = [], initialComingSoon = [], init
               emptyMessage="Không có phim đang chiếu nào"
               movieTypeColumns={nsMovieTypeColumns}
               setMovieTypeColumns={setNsMovieTypeColumns}
+              selectType={selectType}
             />
           </TabsContent>
 
@@ -413,6 +419,7 @@ export function MovieList({ initialNowShowing = [], initialComingSoon = [], init
               emptyMessage="Không có phim sắp chiếu nào"
               movieTypeColumns={csMovieTypeColumns}
               setMovieTypeColumns={setCsMovieTypeColumns}
+              selectType={selectType}
             />
           </TabsContent>
         </Tabs>

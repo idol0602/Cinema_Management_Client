@@ -12,10 +12,11 @@ import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 
 interface MovieCardProps {
-  movie: MovieType
+  movie: MovieType,
+  badgeTitle : string
 }
 
-export function MovieCard({ movie }: MovieCardProps) {
+export function MovieCard({ movie, badgeTitle }: MovieCardProps) {
   const router = useRouter()
 
   const handleBooking = (e: React.MouseEvent) => {
@@ -40,7 +41,7 @@ export function MovieCard({ movie }: MovieCardProps) {
           {/* Status Badge */}
           {movie.is_active && (
             <Badge className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-              Đang chiếu
+              {badgeTitle}
             </Badge>
           )}
 
