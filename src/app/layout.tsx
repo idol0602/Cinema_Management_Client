@@ -7,7 +7,7 @@ import { Header } from '@/components/commons/header';
 import { Footer } from '@/components/commons/footer';
 import { Toaster } from 'sonner';
 import { ChatPopup } from '@/components/commons/ChatPopup';
-import { OnlineTracker } from '@/components/commons/OnlineTracker';
+import { SocketProvider } from '@/components/providers/socket-provider';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -53,12 +53,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <Header />
-            {children}
-            <Footer />
-            <ChatPopup />
-            <OnlineTracker />
-            <Toaster position="top-right" richColors closeButton/>
+            <SocketProvider>
+              <Header />
+              {children}
+              <Footer />
+              <ChatPopup />
+              <Toaster position="top-right" richColors closeButton/>
+            </SocketProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
