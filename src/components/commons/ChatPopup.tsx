@@ -30,6 +30,10 @@ import {
   CheckCheck,
   Maximize2,
   Minimize2,
+  Trash2,
+  Undo2,
+  Ban,
+  Download,
 } from 'lucide-react';
 
 type ChatMode = 'qa' | 'booking' | 'staff';
@@ -58,12 +62,16 @@ export function ChatPopup() {
   const [staffInput, setStaffInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const staffMessagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const staffInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const conversationRef = useRef<string | null>(null);
 
   const { user, isAuthenticated } = useAuthStore();
 
@@ -86,25 +94,122 @@ export function ChatPopup() {
     }
   }, [isOpen, mode]);
 
+  // ---------- Track current conversation for closures ----------
+  useEffect(() => {
+    conversationRef.current = conversation?.id ?? null;
+  }, [conversation]);
+
+  // ---------- Track socket connection state reactively ----------
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSocketConnected(false);
+      return;
+    }
+
+    const cleanupFns: (() => void)[] = [];
+
+    const setup = () => {
+      const socket = socketService.getSocket();
+      if (!socket) return false;
+
+      if (socket.connected) {
+        setSocketConnected(true);
+      }
+
+      const onConnect = () => setSocketConnected(true);
+      const onDisconnect = () => setSocketConnected(false);
+
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+
+      cleanupFns.push(() => {
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
+      });
+
+      return true;
+    };
+
+    // Try immediately, if socket not ready yet, poll until available
+    if (!setup()) {
+      const interval = setInterval(() => {
+        if (setup()) {
+          clearInterval(interval);
+        }
+      }, 100);
+      cleanupFns.push(() => clearInterval(interval));
+    }
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [isAuthenticated]);
+
+  // ---------- Load existing conversation on mount / when switching to staff mode ----------
+  useEffect(() => {
+    if (!isAuthenticated || !socketConnected) return;
+    if (mode !== 'staff') return;
+
+    const loadExisting = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const res = await socketService.getCurrentConversation();
+        if (res.data) {
+          setConversation(res.data);
+          socketService.joinConversation(res.data.id);
+
+          if (res.data.status === ConversationStatus.WAITING) {
+            setIsConnecting(true);
+          }
+
+          // Load message history
+          const msgRes = await socketService.getMessages(res.data.id, 100, 0);
+          if (msgRes.data) {
+            setStaffMessages([...msgRes.data].reverse());
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load existing conversation:', err);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadExisting();
+  }, [isAuthenticated, socketConnected, mode]);
+
   // ---------- Socket listeners for staff chat ----------
   useEffect(() => {
-    if (!isAuthenticated || !socketService.isConnected()) return;
+    if (!isAuthenticated || !socketConnected) return;
 
     const offAssigned = socketService.onConversationAssigned((conv) => {
-      setConversation((prev) => (prev?.id === conv.id ? conv : prev));
-      setIsConnecting(false);
+      setConversation((prev) => {
+        if (prev?.id === conv.id) {
+          setIsConnecting(false);
+          return conv;
+        }
+        return prev;
+      });
     });
 
-    const offClosed = socketService.onConversationClosed(() => {
-      setConversation(null);
-      setStaffMessages([]);
+    const offClosed = socketService.onConversationClosed(({ conversationId }) => {
+      setConversation((prev) => {
+        if (prev?.id === conversationId) {
+          setStaffMessages([]);
+          return null;
+        }
+        return prev;
+      });
     });
 
     const offMessage = socketService.onNewMessage((msg) => {
-      setStaffMessages((prev) => {
-        if (prev.find((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
+      // Chỉ thêm nếu message thuộc conversation hiện tại
+      if (msg.conversation_id === conversationRef.current) {
+        setStaffMessages((prev) => {
+          if (prev.find((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+      }
     });
 
     const offRead = socketService.onMessageReadUpdate(({ userId: readUserId }) => {
@@ -115,13 +220,18 @@ export function ChatPopup() {
       }
     });
 
+    const offRecalled = socketService.onMessageRecalled((msg) => {
+      setStaffMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)));
+    });
+
     return () => {
       offAssigned();
       offClosed();
       offMessage();
       offRead();
+      offRecalled();
     };
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, socketConnected, user?.id]);
 
   // ---------- QA: send ----------
   const handleSendQA = async () => {
@@ -177,11 +287,12 @@ export function ChatPopup() {
         setConversation(res.data.conversation);
         socketService.joinConversation(res.data.conversation.id);
 
-        // Add the first message to the list
+        // Thêm tin nhắn đầu tiên vào danh sách
         if (res.data.message) {
           setStaffMessages([res.data.message]);
         }
 
+        // Nếu conversation đã ACTIVE (tìm lại conversation cũ), tắt isConnecting
         if (res.data.conversation.status === ConversationStatus.ACTIVE) {
           setIsConnecting(false);
         }
@@ -201,7 +312,7 @@ export function ChatPopup() {
     const content = staffInput.trim();
     setStaffInput('');
 
-    // If no conversation yet, create one with the first message
+    // Nếu chưa có conversation → tạo mới + gửi tin nhắn đầu
     if (!conversation) {
       await handleSendStaffFirstMessage(content);
       return;
@@ -227,7 +338,43 @@ export function ChatPopup() {
   const handleImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !conversation) return;
+      if (!file) return;
+
+      // Nếu chưa có conversation → tạo trước rồi gửi ảnh
+      if (!conversation) {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = reader.result as string;
+          setIsSending(true);
+          setIsConnecting(true);
+          try {
+            // Tạo conversation trước
+            const convRes = await socketService.createConversation();
+            if (convRes.data) {
+              setConversation(convRes.data);
+              socketService.joinConversation(convRes.data.id);
+
+              // Gửi ảnh
+              const imgRes = await socketService.sendImageMessage(convRes.data.id, base64);
+              if (imgRes.data) {
+                setStaffMessages([imgRes.data]);
+              }
+
+              if (convRes.data.status === ConversationStatus.ACTIVE) {
+                setIsConnecting(false);
+              }
+            }
+          } catch (err) {
+            console.error('Image send failed:', err);
+            setIsConnecting(false);
+          } finally {
+            setIsSending(false);
+          }
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = async () => {
@@ -247,7 +394,7 @@ export function ChatPopup() {
     [conversation]
   );
 
-  // ---------- Staff: close conversation ----------
+  // ---------- Staff: close (delete) conversation ----------
   const handleCloseStaffChat = useCallback(async () => {
     if (!conversation) return;
     try {
@@ -257,7 +404,20 @@ export function ChatPopup() {
     }
     setConversation(null);
     setStaffMessages([]);
+    setIsConnecting(false);
   }, [conversation]);
+
+  // ---------- Staff: recall message ----------
+  const handleRecall = useCallback(async (messageId: string) => {
+    try {
+      const res = await socketService.recallMessage(messageId);
+      if (res.error) {
+        console.error('Recall failed:', res.error);
+      }
+    } catch (err) {
+      console.error('Recall failed:', err);
+    }
+  }, []);
 
   // ---------- Key handling ----------
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -539,6 +699,12 @@ export function ChatPopup() {
                     Bạn cần đăng nhập để trò chuyện với nhân viên hỗ trợ.
                   </p>
                 </div>
+              ) : isLoadingHistory ? (
+                /* Loading existing conversation */
+                <div className="flex flex-1 flex-col items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                  <p className="mt-2 text-sm text-gray-500">Đang tải...</p>
+                </div>
               ) : !conversation ? (
                 /* No active conversation – show input to send first message */
                 <>
@@ -550,13 +716,29 @@ export function ChatPopup() {
                       Chat với nhân viên
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Gửi tin nhắn để bắt đầu cuộc trò chuyện với nhân viên hỗ trợ.
+                      Gửi tin nhắn hoặc ảnh để bắt đầu cuộc trò chuyện với nhân viên hỗ trợ.
                     </p>
                   </div>
 
                   {/* Input for first message */}
                   <div className="border-t border-gray-200 p-3 dark:border-gray-700">
                     <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-gray-400 hover:text-orange-500"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isSending}
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                      </Button>
                       <Input
                         ref={staffInputRef}
                         value={staffInput}
@@ -584,14 +766,14 @@ export function ChatPopup() {
               ) : (
                 <>
                   {/* Connecting indicator */}
-                  {isConnecting && (
+                  {/* {isConnecting && (
                     <div className="flex items-center gap-2 border-b border-orange-200 bg-orange-50 px-4 py-2 dark:border-orange-900 dark:bg-orange-950/30">
                       <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
                       <span className="text-xs text-orange-600 dark:text-orange-400">
                         Đang chờ nhân viên kết nối...
                       </span>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Staff Messages */}
                   <ScrollArea className="flex-1 p-4">
@@ -613,7 +795,7 @@ export function ChatPopup() {
                             <div
                               key={msg.id}
                               className={cn(
-                                'flex items-end gap-2',
+                                'group flex items-end gap-2',
                                 isMe ? 'justify-end' : 'justify-start'
                               )}
                             >
@@ -625,34 +807,60 @@ export function ChatPopup() {
                                   />
                                 </Avatar>
                               )}
-                              <div
-                                className={cn(
-                                  'max-w-[75%] rounded-2xl px-3.5 py-2 text-sm',
-                                  isMe
-                                    ? 'rounded-br-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                    : 'rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                                )}
-                              >
-                                {msg.image_url && (
-                                  <img
-                                    src={msg.image_url}
-                                    alt="Ảnh"
-                                    className="mb-1 max-h-48 rounded-lg object-cover"
-                                  />
-                                )}
-                                {msg.content && (
-                                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                                )}
+                              {msg.type === 'RECALLED' ? (
                                 <div
                                   className={cn(
-                                    'mt-1 flex items-center gap-1 text-[10px]',
-                                    isMe ? 'justify-end opacity-70' : 'opacity-50'
+                                    'flex max-w-[75%] items-center gap-1.5 rounded-2xl border border-dashed px-3.5 py-2 text-sm italic opacity-60',
+                                    isMe
+                                      ? 'rounded-br-sm border-orange-300 dark:border-orange-700'
+                                      : 'rounded-bl-sm border-gray-400 dark:border-gray-600'
                                   )}
                                 >
-                                  <span>{formatTime(msg.created_at)}</span>
-                                  {isMe && msg.is_seen && <CheckCheck className="h-3 w-3" />}
+                                  <Ban className="h-3.5 w-3.5 shrink-0" />
+                                  <span>Tin nhắn đã bị thu hồi</span>
                                 </div>
-                              </div>
+                              ) : (
+                                <>
+                                  {isMe && (
+                                    <button
+                                      onClick={() => handleRecall(msg.id)}
+                                      className="mb-1 hidden shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-red-100 hover:text-red-500 group-hover:block dark:hover:bg-red-950"
+                                      title="Thu hồi tin nhắn"
+                                    >
+                                      <Undo2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  <div
+                                    className={cn(
+                                      'max-w-[75%] rounded-2xl px-3.5 py-2 text-sm',
+                                      isMe
+                                        ? 'rounded-br-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                        : 'rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                                    )}
+                                  >
+                                    {msg.image_url && (
+                                      <img
+                                        src={msg.image_url}
+                                        alt="Ảnh"
+                                        className="mb-1 max-h-48 cursor-pointer rounded-lg object-cover transition-opacity hover:opacity-80"
+                                        onClick={() => setPreviewImage(msg.image_url)}
+                                      />
+                                    )}
+                                    {msg.content && (
+                                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    )}
+                                    <div
+                                      className={cn(
+                                        'mt-1 flex items-center gap-1 text-[10px]',
+                                        isMe ? 'justify-end opacity-70' : 'opacity-50'
+                                      )}
+                                    >
+                                      <span>{formatTime(msg.created_at)}</span>
+                                      {isMe && msg.is_seen && <CheckCheck className="h-3 w-3" />}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                               {isMe && (
                                 <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
                                   <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -711,16 +919,16 @@ export function ChatPopup() {
                         )}
                       </Button>
                     </div>
-                    {conversation.status === ConversationStatus.ACTIVE && (
-                      <div className="mt-2 flex justify-end">
-                        <button
-                          onClick={handleCloseStaffChat}
-                          className="text-xs text-gray-400 transition-colors hover:text-red-500"
-                        >
-                          Kết thúc trò chuyện
-                        </button>
-                      </div>
-                    )}
+                    {/* Nút xóa cuộc trò chuyện */}
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={handleCloseStaffChat}
+                        className="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-red-500"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Xóa cuộc trò chuyện
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -750,6 +958,42 @@ export function ChatPopup() {
           )}
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-h-[85vh] max-w-full rounded-lg object-contain"
+            />
+            <div className="absolute -right-3 -top-3 flex gap-1">
+              <a
+                href={previewImage}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                title="Tải xuống"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Download className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              </a>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                title="Đóng"
+              >
+                <X className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   keywords: ['Meta Cinema', 'Rạp chiếu phim', 'Phim mới', 'Đặt vé online', 'Cinema'],
   authors: [{ name: 'Meta Cinema' }],
   creator: 'Meta Cinema',
+  icons: {
+    icon: '/images/logo.png',
+    shortcut: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
