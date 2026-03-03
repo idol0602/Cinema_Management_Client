@@ -38,4 +38,7 @@ searchableColumns : [
   defaultSortBy: [["created_at", "DESC"]],
   defaultLimit: 10,
   maxLimit: 50,
+  joinTableFields: {
+    users: ["name","email"],
+  },
 };

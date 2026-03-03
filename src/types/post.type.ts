@@ -6,6 +6,10 @@ export interface PostType {
   user_id: string;
   is_active?: boolean;
   created_at?: string;
+  users?: {
+    name: string;
+    email: string;
+  }
 }
 
 export interface CreatePostType {

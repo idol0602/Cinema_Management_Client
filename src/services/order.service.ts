@@ -195,6 +195,27 @@ export const orderService = {
       };
     }
   },
+
+  requestRefund: async (orderId: string): Promise<serviceResponse> => {
+    try {
+      const response = await api.put(`/orders/${orderId}`, {
+        payment_status: "REFUND_PENDING",
+        requested_at: new Date().toISOString(),
+      });
+      return {
+        data: response.data.data,
+        success: true,
+        error: response.data.error,
+      };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return {
+        data: null,
+        success: false,
+        error: apiError.message,
+      };
+    }
+  },
 }
 
 /**

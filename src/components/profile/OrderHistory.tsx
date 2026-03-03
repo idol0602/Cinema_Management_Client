@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useOrderHistory } from "@/hooks/useOrders"
 import { OrderDetailDialog } from "./OrderDetailDialog"
+import { orderService } from "@/services/order.service"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -14,6 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import Image from "next/image"
 import { statusMap } from "@/lib/statusMap"
 import { orderPaginationConfig } from "@/config/paginate/order.config"
@@ -28,9 +39,12 @@ import {
   ChevronRight,
   Search,
   SlidersHorizontal,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
 import { OrderType } from "@/types/order.type"
+import { useQueryClient } from "@tanstack/react-query"
 
 const paymentStatusOptions = [
   { value: "COMPLETED", label: "Hoàn thành" },
@@ -83,6 +97,12 @@ export function OrderHistory() {
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false)
+  const [refundOrder, setRefundOrder] = useState<OrderType | null>(null)
+  const [isRefunding, setIsRefunding] = useState(false)
+  const [refundEligible, setRefundEligible] = useState(false)
+  const [refundMessage, setRefundMessage] = useState("")
+  const queryClient = useQueryClient()
 
   // Auto-search when filters change
   useEffect(() => {
@@ -133,8 +153,79 @@ export function OrderHistory() {
     setDetailOpen(true)
   }
 
-  const handleRefund = (orderId: string) => {
-    toast.info(`Yêu cầu hoàn tiền cho đơn ${orderId} — tính năng đang phát triển`)
+  const handleRefund = async (order: OrderType) => {
+    // Check conditions on client side
+    const isMomo = order.payment_method === "MOMO"
+
+    if (!isMomo) {
+      setRefundEligible(false)
+      setRefundMessage(
+        "Đơn hàng này không đủ điều kiện hoàn tiền. Chỉ hỗ trợ hoàn tiền cho đơn hàng thanh toán qua MoMo."
+      )
+      setRefundOrder(order)
+      setRefundDialogOpen(true)
+      return
+    }
+
+    // Fetch order details to get showtime start_time
+    try {
+      const detailRes = await orderService.getOrderDetails(order.id!)
+      if (!detailRes.success || !detailRes.data) {
+        toast.error("Không thể tải thông tin đơn hàng")
+        return
+      }
+
+      const details = detailRes.data as any
+      const startTime = details.tickets?.[0]?.showtime?.start_time
+
+      if (!startTime) {
+        toast.error("Không tìm thấy thông tin suất chiếu")
+        return
+      }
+
+      const now = new Date()
+      const showStart = new Date(startTime)
+      const twoHoursMs = 2 * 60 * 60 * 1000
+      const isBeforeTwoHours = showStart.getTime() - now.getTime() >= twoHoursMs
+
+      if (!isBeforeTwoHours) {
+        setRefundEligible(false)
+        setRefundMessage(
+          "Đơn hàng này không đủ điều kiện hoàn tiền. Bạn chỉ có thể yêu cầu hoàn tiền trước thời gian bắt đầu suất chiếu ít nhất 2 giờ."
+        )
+      } else {
+        setRefundEligible(true)
+        setRefundMessage(
+          `Bạn có chắc chắn muốn yêu cầu hoàn tiền cho đơn hàng này?\n\nSố tiền: ${formatCurrency(order.total_price)}\nPhương thức: ${order.payment_method}`
+        )
+      }
+
+      setRefundOrder(order)
+      setRefundDialogOpen(true)
+    } catch {
+      toast.error("Có lỗi xảy ra khi kiểm tra điều kiện hoàn tiền")
+    }
+  }
+
+  const handleConfirmRefund = async () => {
+    if (!refundOrder?.id) return
+    setIsRefunding(true)
+    try {
+      const res = await orderService.requestRefund(refundOrder.id)
+      if (res.success) {
+        toast.success("Yêu cầu hoàn tiền đã được gửi thành công!")
+        setRefundDialogOpen(false)
+        setRefundOrder(null)
+        // Refresh order list
+        queryClient.invalidateQueries({ queryKey: ["orderHistory"] })
+      } else {
+        toast.error(res.error || "Yêu cầu hoàn tiền thất bại")
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi gửi yêu cầu hoàn tiền")
+    } finally {
+      setIsRefunding(false)
+    }
   }
 
   if (isLoading) {
@@ -317,11 +408,11 @@ export function OrderHistory() {
                         <Eye className="w-3.5 h-3.5" />
                         Chi tiết
                       </Button>
-                      {order.payment_status === "COMPLETED" && (
+                      {order.payment_status === "COMPLETED" && order.payment_method === "MOMO" && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRefund(order.id!)}
+                          onClick={() => handleRefund(order)}
                           className="gap-1 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -403,6 +494,48 @@ export function OrderHistory() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />
+
+      {/* Refund Confirm Dialog */}
+      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className={`w-5 h-5 ${refundEligible ? "text-orange-500" : "text-red-500"}`} />
+              {refundEligible ? "Xác nhận yêu cầu hoàn tiền" : "Không đủ điều kiện hoàn tiền"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p className="whitespace-pre-line">{refundMessage}</p>
+                <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-sm text-orange-700 dark:text-orange-400">
+                  <p className="font-semibold mb-1">📋 Chính sách hoàn tiền:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Chỉ hỗ trợ hoàn tiền cho đơn hàng thanh toán qua <strong>MoMo</strong></li>
+                    <li>Yêu cầu phải trước thời gian bắt đầu suất chiếu <strong>ít nhất 2 giờ</strong></li>
+                    <li>Sau khi gửi yêu cầu, nhân viên sẽ xử lý hoàn tiền trong thời gian sớm nhất</li>
+                  </ul>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRefunding}>Đóng</AlertDialogCancel>
+            {refundEligible && (
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={handleConfirmRefund}
+                disabled={isRefunding}
+              >
+                {isRefunding ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                )}
+                Gửi yêu cầu hoàn tiền
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

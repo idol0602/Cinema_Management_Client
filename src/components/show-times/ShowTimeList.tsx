@@ -59,9 +59,15 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
     if (roomFilter) {
       filter.room_id = roomFilter
     }
+    // Default: only show showtimes from today onwards
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     if (startDate) {
       filter.start_time = filter.start_time || {}
       filter.start_time.$gte = `${startDate}T00:00:00Z`
+    } else {
+      filter.start_time = filter.start_time || {}
+      filter.start_time.$gte = today.toISOString()
     }
     if (endDate) {
       filter.end_time = filter.end_time || {}
