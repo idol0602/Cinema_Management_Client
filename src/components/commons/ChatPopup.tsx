@@ -24,7 +24,7 @@ import {
   User,
   Loader2,
   MessageSquareText,
-  Ticket,
+
   Headset,
   ImagePlus,
   CheckCheck,
@@ -36,7 +36,7 @@ import {
   Download,
 } from 'lucide-react';
 
-type ChatMode = 'qa' | 'booking' | 'staff';
+type ChatMode = 'qa' | 'staff';
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('vi-VN', {
@@ -560,18 +560,6 @@ export function ChatPopup() {
               <Headset className="h-4 w-4" />
               Nhân viên
             </button>
-            <button
-              onClick={() => setMode('booking')}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors',
-                mode === 'booking'
-                  ? 'border-b-2 border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              )}
-            >
-              <Ticket className="h-4 w-4" />
-              Đặt vé
-            </button>
           </div>
 
           {/* ============ QA MODE ============ */}
@@ -935,27 +923,7 @@ export function ChatPopup() {
             </>
           )}
 
-          {/* ============ BOOKING MODE ============ */}
-          {mode === 'booking' && (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-                <Ticket className="h-10 w-10 text-orange-500" />
-              </div>
-              <h4 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">Đặt vé qua AI</h4>
-              <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                Tính năng đang được phát triển. Bạn có thể sử dụng chế độ Hỏi đáp để tìm hiểu thông
-                tin phim và suất chiếu.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setMode('qa')}
-                className="border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950"
-              >
-                <MessageSquareText className="mr-2 h-4 w-4" />
-                Chuyển sang Hỏi đáp
-              </Button>
-            </div>
-          )}
+
         </div>
       </div>
 

@@ -8,6 +8,8 @@ import { Footer } from '@/components/commons/footer';
 import { Toaster } from 'sonner';
 import { ChatPopup } from '@/components/commons/ChatPopup';
 import { SocketProvider } from '@/components/providers/socket-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { BookingSidebar } from '@/components/commons/BookingSidebar';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -59,9 +61,14 @@ export default function RootLayout({
         >
           <QueryProvider>
             <SocketProvider>
-              <Header />
-              {children}
-              <Footer />
+              <SidebarProvider defaultOpen={false}>
+                <div className="flex flex-col min-h-screen w-full">
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                </div>
+                <BookingSidebar />
+              </SidebarProvider>
               <ChatPopup />
               <Toaster position="top-right" richColors closeButton/>
             </SocketProvider>
