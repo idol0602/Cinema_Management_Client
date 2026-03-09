@@ -431,7 +431,7 @@ export function ChatPopup() {
   // ---------- Panel size ----------
   const panelClasses = isFullscreen
     ? 'fixed inset-0 z-50 m-0 rounded-none'
-    : 'fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]';
+    : 'fixed bottom-32 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]';
 
   const chatHeight = isFullscreen ? 'h-screen' : 'h-[560px]';
 
@@ -442,7 +442,7 @@ export function ChatPopup() {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            'fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-110',
+            'fixed bottom-20 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-all duration-300 hover:scale-110',
             isOpen
               ? 'rotate-0 bg-gray-700 hover:bg-gray-600'
               : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/40 hover:from-orange-600 hover:to-orange-700'

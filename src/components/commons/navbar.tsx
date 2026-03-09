@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Film, Newspaper, Calendar, UtensilsCrossed, DollarSign } from "lucide-react"
+import { Film, Newspaper, Calendar, UtensilsCrossed, DollarSign, Sparkles } from "lucide-react"
 
 const navItems = [
   {
@@ -30,6 +30,11 @@ const navItems = [
     href: "/ticket-prices",
     label: "Giá vé",
     icon: DollarSign
+  },
+  {
+    href: "/ai-mode",
+    label: "Đặt Vé Với AI",
+    icon: Sparkles
   }
 ]
 

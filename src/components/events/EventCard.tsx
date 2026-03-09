@@ -2,14 +2,16 @@
 
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import type { EventType } from "@/types/event.type"
-import { Calendar, MapPin } from "lucide-react"
+import { Calendar, MapPin, Eye } from "lucide-react"
 
 interface EventCardProps {
   event: EventType
+  onViewDetail?: (event: EventType) => void
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onViewDetail }: EventCardProps) {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return ""
     return new Date(dateStr).toLocaleDateString("vi-VN", {
@@ -45,6 +47,21 @@ export function EventCard({ event }: EventCardProps) {
           <div className="w-full h-full flex items-center justify-center">
             <Calendar className="w-16 h-16 text-gray-300 dark:text-gray-600" />
           </div>
+        )}
+
+        {/* View Detail Button */}
+        {onViewDetail && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 hover:bg-black/60 transition-all duration-300 z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              onViewDetail(event)
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
         )}
 
         {/* Status badges */}

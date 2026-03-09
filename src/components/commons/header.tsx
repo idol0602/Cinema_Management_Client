@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Navbar } from "./navbar"
 import { ThemeToggle } from "../theme-toggle"
-import { useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,7 +20,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore()
-  const { toggleSidebar } = useSidebar()
 
   const handleLogout = async () => {
     await logout()
@@ -61,19 +59,6 @@ export function Header() {
           <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* AI Booking Sidebar Trigger */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSidebar}
-              className="relative h-9 gap-1.5 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 border border-orange-200 dark:border-orange-800 transition-all duration-300"
-              title="AI Đặt Vé"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs font-medium">AI Đặt Vé</span>
-            </Button>
-
             {/* Auth Section */}
             {isAuthenticated && user ? (
               <DropdownMenu>

@@ -28,11 +28,6 @@ export default async function HomePage() {
   const initialNowShowing = Array.isArray(nowShowingResponse.data) ? nowShowingResponse.data as MovieType[] : []
   const initialComingSoon = Array.isArray(comingSoonResponse.data) ? comingSoonResponse.data as MovieType[] : []
   const initialMovieTypes = Array.isArray(movieTypesResponse.data) ? movieTypesResponse.data as MovieTypeType[] : []
-
-  console.log(initialNowShowing)
-  console.log(initialComingSoon)
-  console.log(initialMovieTypes)
-
   return (
     <main className="min-h-screen">
       <HeroCarousel initialSlides={initialSlides} />

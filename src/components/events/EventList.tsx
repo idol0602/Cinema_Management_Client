@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useEvents } from "@/hooks/useEvents"
 import { eventPaginateConfig } from "@/config/paginate/event.config"
 import { EventCard } from "./EventCard"
+import { EventDetailDialog } from "./EventDetailDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { EventType } from "@/types/event.type"
@@ -30,6 +31,15 @@ export function EventList({ initialEvents = [] }: EventListProps) {
   const [statusColumn, setStatusColumn] = useState("")
   const [counterColumn, setCounterColumn] = useState("")
   const [inComboColumn, setInComboColumn] = useState("")
+
+  // Event detail dialog state
+  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+
+  const handleViewDetail = (event: EventType) => {
+    setSelectedEvent(event)
+    setDetailDialogOpen(true)
+  }
 
   const buildFilter = () => {
     const filter: Record<string, any> = { is_active: "true" }
@@ -217,7 +227,7 @@ export function EventList({ initialEvents = [] }: EventListProps) {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.id} event={event} onViewDetail={handleViewDetail} />
               ))}
             </div>
 
@@ -292,6 +302,13 @@ export function EventList({ initialEvents = [] }: EventListProps) {
           </div>
         )}
       </div>
+
+      {/* Event Detail Dialog */}
+      <EventDetailDialog
+        event={selectedEvent}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+      />
     </section>
   )
 }
