@@ -19,6 +19,11 @@ interface AiBookingState {
   // Current step tracking
   currentStep: number
 
+  // AI chat-driven state
+  activeAction: string | null
+  chatData: any
+  isAiLoading: boolean
+
   // Actions
   setMovieId: (id: string | null) => void
   setShowTimeId: (id: string | null) => void
@@ -34,6 +39,9 @@ interface AiBookingState {
   setEventId: (id: string | null) => void
   setPaymentMethod: (method: string) => void
   setCurrentStep: (step: number) => void
+  setActiveAction: (action: string | null) => void
+  setChatData: (data: any) => void
+  setIsAiLoading: (loading: boolean) => void
   resetAll: () => void
 }
 
@@ -46,6 +54,9 @@ const initialState = {
   eventId: null,
   paymentMethod: '',
   currentStep: 0,
+  activeAction: null,
+  chatData: null,
+  isAiLoading: false,
 }
 
 export const useAiBookingStore = create<AiBookingState>()(
@@ -104,6 +115,9 @@ export const useAiBookingStore = create<AiBookingState>()(
       setEventId: (id) => set({ eventId: id }),
       setPaymentMethod: (method) => set({ paymentMethod: method }),
       setCurrentStep: (step) => set({ currentStep: step }),
+      setActiveAction: (action) => set({ activeAction: action }),
+      setChatData: (data) => set({ chatData: data }),
+      setIsAiLoading: (loading) => set({ isAiLoading: loading }),
       resetAll: () => set(initialState),
     }),
     { name: 'ai-booking-store' }

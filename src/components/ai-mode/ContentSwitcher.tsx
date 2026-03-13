@@ -37,7 +37,7 @@ const viewButtons: { id: ContentViewType; label: string; icon: React.ElementType
 
 export function ContentSwitcher({ activeView, onViewChange }: ContentSwitcherProps) {
   return (
-    <div className="flex items-center gap-1.5 flex-wrap bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-2">
+    <div className="flex items-center gap-1.5 flex-wrap bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-2 hidden">
       {viewButtons.map((btn) => {
         const Icon = btn.icon
         const isActive = activeView === btn.id

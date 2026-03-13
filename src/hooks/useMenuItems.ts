@@ -6,6 +6,7 @@ import { defaultOption } from "./option"
 
 interface UseMenuItemsOptions extends PaginationQuery {
   initialData?: MenuItemType[]
+  enabled?: boolean
 }
 
 export const useMenuItems = (options: UseMenuItemsOptions) => {
@@ -17,6 +18,7 @@ export const useMenuItems = (options: UseMenuItemsOptions) => {
     searchBy,
     filter,
     initialData,
+    enabled,
   } = options
 
   // Always force is_active: true for customer-facing
@@ -30,6 +32,7 @@ export const useMenuItems = (options: UseMenuItemsOptions) => {
       })
       return response as PaginatedResponse<MenuItemType>
     },
+    enabled: enabled !== false,
     initialData: initialData ? {
       data: initialData,
       success: true,

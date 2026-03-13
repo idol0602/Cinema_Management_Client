@@ -6,6 +6,7 @@ import { defaultOption } from "./option"
 
 interface UseTicketPricesOptions extends PaginationQuery {
   initialData?: TicketPriceType[]
+  enabled?: boolean
 }
 
 export const useTicketPrices = (options: UseTicketPricesOptions) => {
@@ -17,6 +18,7 @@ export const useTicketPrices = (options: UseTicketPricesOptions) => {
     searchBy,
     filter,
     initialData,
+    enabled,
   } = options
 
   // Always force is_active: true for customer-facing
@@ -30,6 +32,7 @@ export const useTicketPrices = (options: UseTicketPricesOptions) => {
       })
       return response as PaginatedResponse<TicketPriceType>
     },
+    enabled: enabled !== false,
     initialData: initialData ? {
       data: initialData,
       success: true,

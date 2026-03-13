@@ -6,6 +6,7 @@ import { defaultOption } from "./option"
 
 interface UseCombosOptions extends PaginationQuery {
   initialData?: ComboType[]
+  enabled?: boolean
 }
 
 export const useCombos = (options: UseCombosOptions) => {
@@ -17,6 +18,7 @@ export const useCombos = (options: UseCombosOptions) => {
     searchBy,
     filter,
     initialData,
+    enabled,
   } = options
   return useQuery<PaginatedResponse<ComboType>>({
     queryKey: ["combos", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
@@ -24,6 +26,7 @@ export const useCombos = (options: UseCombosOptions) => {
       const response = await comboService.findAndPaginate({ page, limit, sortBy, search, searchBy, filter })
       return response as PaginatedResponse<ComboType>
     },
+    enabled: enabled !== false,
     initialData: initialData ? {
       data: initialData,
       success: true,

@@ -1,179 +1,234 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { useEvents } from "@/hooks/useEvents"
-import { eventPaginateConfig } from "@/config/paginate/event.config"
-import { EventCard } from "./EventCard"
-import { EventDetailDialog } from "./EventDetailDialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import type { EventType } from "@/types/event.type"
+import React, { useState, useEffect } from 'react';
+import { useEvents } from '@/hooks/useEvents';
+import { eventPaginateConfig } from '@/config/paginate/event.config';
+import { EventCard } from './EventCard';
+import { EventDetailDialog } from './EventDetailDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { EventType } from '@/types/event.type';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Search, Filter, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+} from '@/components/ui/select';
+import { Search, Filter, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface EventListProps {
-  initialEvents?: EventType[]
+  initialEvents?: EventType[];
+  disableFetch?: boolean;
 }
 
-export function EventList({ initialEvents = [] }: EventListProps) {
-  const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchColumn, setSearchColumn] = useState("")
-  const [sortColumn, setSortColumn] = useState("")
-  const [orderColumn, setOrderColumn] = useState("")
-  const [statusColumn, setStatusColumn] = useState("")
-  const [counterColumn, setCounterColumn] = useState("")
-  const [inComboColumn, setInComboColumn] = useState("")
+export function EventList({ initialEvents = [], disableFetch }: EventListProps) {
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchColumn, setSearchColumn] = useState('');
+  const [sortColumn, setSortColumn] = useState('');
+  const [orderColumn, setOrderColumn] = useState('');
+  const [statusColumn, setStatusColumn] = useState('');
+  const [counterColumn, setCounterColumn] = useState('');
+  const [inComboColumn, setInComboColumn] = useState('');
 
   // Event detail dialog state
-  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null)
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  const useAiDataOnly =
+    !!disableFetch &&
+    page === 1 &&
+    !searchQuery &&
+    !searchColumn &&
+    !sortColumn &&
+    !orderColumn &&
+    !statusColumn &&
+    !counterColumn &&
+    !inComboColumn;
 
   const handleViewDetail = (event: EventType) => {
-    setSelectedEvent(event)
-    setDetailDialogOpen(true)
-  }
+    setSelectedEvent(event);
+    setDetailDialogOpen(true);
+  };
 
   const buildFilter = () => {
-    const filter: Record<string, any> = { is_active: "true" }
-    if (statusColumn) filter.is_active = statusColumn
-    if (counterColumn) filter.only_at_counter = counterColumn
-    if (inComboColumn) filter.is_in_combo = inComboColumn
-    return filter
-  }
+    const filter: Record<string, any> = { is_active: 'true' };
+    if (statusColumn) filter.is_active = statusColumn;
+    if (counterColumn) filter.only_at_counter = counterColumn;
+    if (inComboColumn) filter.is_in_combo = inComboColumn;
+    return filter;
+  };
 
   const buildSortBy = () => {
-    if (sortColumn && orderColumn) return `${sortColumn}:${orderColumn}`
-    if (sortColumn) return `${sortColumn}:DESC`
-    return eventPaginateConfig.defaultSortBy[0][0] + ":" + eventPaginateConfig.defaultSortBy[0][1]
-  }
+    if (sortColumn && orderColumn) return `${sortColumn}:${orderColumn}`;
+    if (sortColumn) return `${sortColumn}:DESC`;
+    return eventPaginateConfig.defaultSortBy[0][0] + ':' + eventPaginateConfig.defaultSortBy[0][1];
+  };
 
-  const { data: eventsResponse, isLoading } = useEvents({
+  const { data: _eventsResponse, isLoading } = useEvents({
     page,
     limit: eventPaginateConfig.defaultLimit,
     search: searchQuery || undefined,
     searchBy: searchColumn || undefined,
     sortBy: buildSortBy(),
     filter: buildFilter(),
-    initialData: page === 1 && !searchQuery && !statusColumn && !counterColumn && !inComboColumn ? initialEvents : undefined,
-  })
+    initialData:
+      page === 1 && !searchQuery && !statusColumn && !counterColumn && !inComboColumn
+        ? initialEvents
+        : undefined,
+    enabled: !useAiDataOnly,
+  });
 
-  const events = eventsResponse?.data || []
-  const meta = eventsResponse?.meta
+  const eventsResponse =
+    useAiDataOnly && initialEvents
+      ? ({
+          data: initialEvents,
+          meta: {
+            totalItems: initialEvents.length,
+            currentPage: 1,
+            totalPages: 1,
+            itemsPerPage: initialEvents.length,
+          },
+        } as any)
+      : _eventsResponse;
 
-  const handleSearch = () => setPage(1)
+  const events = eventsResponse?.data || [];
+  const meta = eventsResponse?.meta;
+
+  const handleSearch = () => setPage(1);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch()
-  }
+    if (e.key === 'Enter') handleSearch();
+  };
 
   useEffect(() => {
-    setPage(1)
-  }, [statusColumn, counterColumn, inComboColumn, sortColumn, orderColumn, searchColumn])
+    setPage(1);
+  }, [statusColumn, counterColumn, inComboColumn, sortColumn, orderColumn, searchColumn, searchQuery]);
 
   const handleClearFilter = (filterType: string) => {
-    if (filterType === "status") setStatusColumn("")
-    if (filterType === "counter") setCounterColumn("")
-    if (filterType === "inCombo") setInComboColumn("")
-    if (filterType === "sort") { setSortColumn(""); setOrderColumn("") }
-    if (filterType === "search") { setSearchQuery(""); setSearchColumn("") }
-  }
+    if (filterType === 'status') setStatusColumn('');
+    if (filterType === 'counter') setCounterColumn('');
+    if (filterType === 'inCombo') setInComboColumn('');
+    if (filterType === 'sort') {
+      setSortColumn('');
+      setOrderColumn('');
+    }
+    if (filterType === 'search') {
+      setSearchQuery('');
+      setSearchColumn('');
+    }
+  };
 
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-900">
+    <section className="bg-gray-50 py-16 dark:bg-gray-900">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+            <h2 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
               Sự Kiện Nổi Bật
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
               Cập nhật những sự kiện và khuyến mãi mới nhất
             </p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
             {/* Search Input */}
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm sự kiện..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="pl-10 border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500"
+                className="border-gray-300 pl-10 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600"
               />
             </div>
 
             {/* Search By */}
-            <Select value={searchColumn || "ALL"} onValueChange={(val) => setSearchColumn(val === "ALL" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
+            <Select
+              value={searchColumn || 'ALL'}
+              onValueChange={(val) => setSearchColumn(val === 'ALL' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
                 <SelectValue placeholder="Tìm theo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả</SelectItem>
                 {eventPaginateConfig.searchableColumns.map((col) => (
-                  <SelectItem key={col.value} value={col.value}>{col.label}</SelectItem>
+                  <SelectItem key={col.value} value={col.value}>
+                    {col.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* Only At Counter Filter */}
-            <Select value={counterColumn || "ALL"} onValueChange={(val) => setCounterColumn(val === "ALL" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
-                <Filter className="w-4 h-4 mr-2" />
+            <Select
+              value={counterColumn || 'ALL'}
+              onValueChange={(val) => setCounterColumn(val === 'ALL' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
+                <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Hình thức" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả</SelectItem>
                 {eventPaginateConfig.filterableColumns.only_at_counter.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* In Combo Filter */}
-            <Select value={inComboColumn || "ALL"} onValueChange={(val) => setInComboColumn(val === "ALL" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
-                <Filter className="w-4 h-4 mr-2" />
+            <Select
+              value={inComboColumn || 'ALL'}
+              onValueChange={(val) => setInComboColumn(val === 'ALL' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
+                <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Combo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả</SelectItem>
                 {eventPaginateConfig.filterableColumns.is_in_combo.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* Sort By */}
-            <Select value={sortColumn || "DEFAULT"} onValueChange={(val) => setSortColumn(val === "DEFAULT" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
+            <Select
+              value={sortColumn || 'DEFAULT'}
+              onValueChange={(val) => setSortColumn(val === 'DEFAULT' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="DEFAULT">Mặc định</SelectItem>
                 {eventPaginateConfig.sortableColumns.map((col) => (
-                  <SelectItem key={col.value} value={col.value}>{col.label}</SelectItem>
+                  <SelectItem key={col.value} value={col.value}>
+                    {col.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* Sort Order */}
             <Select value={orderColumn} onValueChange={setOrderColumn} disabled={!sortColumn}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
               <SelectContent>
@@ -185,26 +240,60 @@ export function EventList({ initialEvents = [] }: EventListProps) {
 
           {/* Active Filters Display */}
           {(searchQuery || searchColumn || counterColumn || inComboColumn || sortColumn) && (
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Bộ lọc đang áp dụng:</span>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">
+                Bộ lọc đang áp dụng:
+              </span>
               {searchQuery && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("search")} className="h-7 text-xs">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('search')}
+                  className="h-7 text-xs"
+                >
                   Tìm: &quot;{searchQuery}&quot; ×
                 </Button>
               )}
               {counterColumn && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("counter")} className="h-7 text-xs">
-                  {eventPaginateConfig.filterableColumns.only_at_counter.find(o => o.value === counterColumn)?.label} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('counter')}
+                  className="h-7 text-xs"
+                >
+                  {
+                    eventPaginateConfig.filterableColumns.only_at_counter.find(
+                      (o) => o.value === counterColumn
+                    )?.label
+                  }{' '}
+                  ×
                 </Button>
               )}
               {inComboColumn && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("inCombo")} className="h-7 text-xs">
-                  {eventPaginateConfig.filterableColumns.is_in_combo.find(o => o.value === inComboColumn)?.label} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('inCombo')}
+                  className="h-7 text-xs"
+                >
+                  {
+                    eventPaginateConfig.filterableColumns.is_in_combo.find(
+                      (o) => o.value === inComboColumn
+                    )?.label
+                  }{' '}
+                  ×
                 </Button>
               )}
               {sortColumn && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("sort")} className="h-7 text-xs">
-                  Sắp xếp: {eventPaginateConfig.sortableColumns.find(c => c.value === sortColumn)?.label} {orderColumn === "ASC" ? "↑" : "↓"} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('sort')}
+                  className="h-7 text-xs"
+                >
+                  Sắp xếp:{' '}
+                  {eventPaginateConfig.sortableColumns.find((c) => c.value === sortColumn)?.label}{' '}
+                  {orderColumn === 'ASC' ? '↑' : '↓'} ×
                 </Button>
               )}
             </div>
@@ -213,7 +302,7 @@ export function EventList({ initialEvents = [] }: EventListProps) {
 
         {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="aspect-[16/9] w-full rounded-lg" />
@@ -225,7 +314,7 @@ export function EventList({ initialEvents = [] }: EventListProps) {
           </div>
         ) : events && events.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => (
                 <EventCard key={event.id} event={event} onViewDetail={handleViewDetail} />
               ))}
@@ -233,11 +322,11 @@ export function EventList({ initialEvents = [] }: EventListProps) {
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-12">
+              <div className="mt-12 flex items-center justify-between">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{" "}
-                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)}{" "}
-                  của {meta.totalItems} sự kiện
+                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
+                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
+                  {meta.totalItems} sự kiện
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -261,13 +350,13 @@ export function EventList({ initialEvents = [] }: EventListProps) {
                             <span className="px-2 text-gray-400">...</span>
                           )}
                           <Button
-                            variant={page === p ? "default" : "outline"}
+                            variant={page === p ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPage(p)}
                             className={
                               page === p
-                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white min-w-10"
-                                : "hover:bg-orange-50 dark:hover:bg-orange-950 min-w-10"
+                                ? 'min-w-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                : 'min-w-10 hover:bg-orange-50 dark:hover:bg-orange-950'
                             }
                           >
                             {p}
@@ -291,9 +380,9 @@ export function EventList({ initialEvents = [] }: EventListProps) {
             )}
           </>
         ) : (
-          <div className="text-center py-16">
-            <Filter className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <div className="py-16 text-center">
+            <Filter className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+            <h3 className="mb-2 text-xl font-semibold text-gray-700 dark:text-gray-300">
               Không tìm thấy sự kiện nào
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
@@ -310,5 +399,5 @@ export function EventList({ initialEvents = [] }: EventListProps) {
         onOpenChange={setDetailDialogOpen}
       />
     </section>
-  )
+  );
 }

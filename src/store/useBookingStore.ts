@@ -836,12 +836,12 @@ export const useBookingStore = create<BookingStore>()(
         }
       },
 
-        handleAfterEndProcess: async (showTimeId: string) => {
+      handleAfterEndProcess: async (showTimeId: string) => {
           const state = get();
           await state.handleCancelHold();
           state.resetBooking();
           state.refreshShowTimeDetail(showTimeId);
-        }
+      }
       }),
       {
         name: 'booking-store',

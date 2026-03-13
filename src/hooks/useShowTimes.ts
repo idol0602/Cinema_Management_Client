@@ -6,6 +6,7 @@ import { defaultOption } from "./option"
 
 interface UseShowTimesOptions extends PaginationQuery {
   initialData?: ShowTimeType[]
+  enabled?: boolean
 }
 
 export const useShowTimes = (options: UseShowTimesOptions) => {
@@ -17,6 +18,7 @@ export const useShowTimes = (options: UseShowTimesOptions) => {
     searchBy,
     filter,
     initialData,
+    enabled,
   } = options
 
   return useQuery<PaginatedResponse<ShowTimeType>>({
@@ -24,6 +26,7 @@ export const useShowTimes = (options: UseShowTimesOptions) => {
     queryFn: async () => {
       return await showTimeService.findAndPaginate({ page, limit, sortBy, search, searchBy, filter })
     },
+    enabled: enabled !== false,
     initialData: initialData ? {
       data: initialData,
       success: true,

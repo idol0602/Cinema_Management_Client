@@ -11,14 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Clock,
   MapPin,
@@ -55,6 +48,8 @@ import type { SeatDetail } from '@/types/showTime.type';
 import { getSeatTypeColor, seatStatusColors } from '@/config/seatTypeColors';
 import { PAYMENT_METHODS } from '@/lib/paymentMethods';
 import Image from 'next/image';
+import BookingConfirmationDialog from '@/components/show-times/BookingConfirmationDialog';
+import type { AiBookingStateDetails } from '@/types/aiBookingStateDetails.type';
 
 interface SeatBookingPageProps {
   showTimeId: string;
@@ -100,14 +95,9 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
     setEventSearch,
     setConfirmDialogOpen,
     getPrice,
-    handlePayment,
     createOrder,
-    resetBooking,
-    refreshShowTimeDetail,
-    stopCountdown,
     selectedPaymentMethod,
     setPaymentMethod,
-    handleAfterEndProcess,
   } = useBookingStore();
 
   const totals = useCalculatedTotals();
@@ -233,25 +223,134 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
 
   const sortedRows = useMemo(() => Object.keys(groupedSeats).sort(), [groupedSeats]);
 
-  // Handle payment
-  const onPayment = async () => {
-    if (!user?.id) {
-      toast.error('Vui lòng đăng nhập để thanh toán');
-      return;
-    }
-    const result = await handlePayment(user.id);
-    if (result) {
-      await handleAfterEndProcess(showTimeId);
-    }
-  };
+  const bookingDetailsForConfirm = useMemo<AiBookingStateDetails | null>(() => {
+    if (!showTimeDetail) return null;
+
+    const discount =
+      selectedEvent?.discount && selectedEvent.discount.is_active
+        ? {
+            id: selectedEvent.discount.id || '',
+            discount_percent: selectedEvent.discount.discount_percent || 0,
+            is_active: true,
+          }
+        : null;
+
+    return {
+      user_id: user?.id,
+      payment_method: selectedPaymentMethod,
+      movie: showTimeDetail.movie
+        ? {
+            id: showTimeDetail.movie.id || '',
+            title: showTimeDetail.movie.title || 'N/A',
+            thumbnail: showTimeDetail.movie.thumbnail,
+            duration: showTimeDetail.movie.duration,
+          }
+        : null,
+      show_time: {
+        id: showTimeDetail.id,
+        day_type: showTimeDetail.day_type,
+        start_time: showTimeDetail.start_time,
+        end_time: showTimeDetail.end_time,
+        room: {
+          id: showTimeDetail.room?.id || '',
+          name: showTimeDetail.room?.name || 'N/A',
+          format: {
+            id: showTimeDetail.room?.format?.id || '',
+            name: showTimeDetail.room?.format?.name || '2D',
+          },
+        },
+      },
+      show_time_seats: selectedSeats.map((seat) => ({
+        id: seat.show_time_seat?.id || seat.id,
+        seat: {
+          id: seat.id,
+          seat_number: seat.seat_number,
+          seat_type: {
+            id: seat.seat_type?.id || '',
+            name: seat.seat_type?.name,
+            type: seat.seat_type?.type,
+          },
+        },
+        ticket_price: {
+          id: '',
+          price: getPrice(
+            showTimeDetail.room?.format?.id || '',
+            seat.seat_type?.id || '',
+            showTimeDetail.day_type || ''
+          ),
+        },
+      })),
+      combos: selectedCombos.map((combo) => {
+        const details = selectedComboDetails.get(combo.id || '');
+        return {
+          id: combo.id || '',
+          name: combo.name,
+          description: combo.description,
+          total_price: combo.total_price || 0,
+          combo_items:
+            details?.combo_items?.map((item: any) => ({
+              id: item.id,
+              quantity: item.quantity || 1,
+              unit_price: item.unit_price,
+              menu_item: {
+                id: item.menu_item?.id,
+                name: item.menu_item?.name || 'Unknown',
+              },
+            })) || [],
+        };
+      }),
+      menu_items: selectedMenuItems.map((menuItem) => ({
+        item_id: menuItem.item.id || '',
+        quantity: menuItem.quantity,
+        unit_price: menuItem.item.price,
+        total_price: menuItem.item.price * menuItem.quantity,
+        item: {
+          id: menuItem.item.id || '',
+          name: menuItem.item.name,
+          description: menuItem.item.description,
+          item_type: menuItem.item.item_type,
+          image: menuItem.item.image,
+        },
+      })),
+      event: selectedEvent
+        ? {
+            id: selectedEvent.id || '',
+            name: selectedEvent.name,
+          }
+        : null,
+      discount,
+      breakdown: {
+        ticket_total: totals.seatTotal,
+        combo_total: totals.comboTotal,
+        menu_total: totals.menuTotal,
+        subtotal: totals.subtotal,
+        discount_percent: totals.discountPercent,
+        discount_amount: totals.discountAmount,
+        service_vat_percent: totals.serviceVatPercent,
+        service_vat: totals.serviceVat,
+        total: totals.total,
+      },
+    };
+  }, [
+    showTimeDetail,
+    selectedSeats,
+    selectedCombos,
+    selectedMenuItems,
+    selectedEvent,
+    selectedComboDetails,
+    totals,
+    getPrice,
+    user?.id,
+    selectedPaymentMethod,
+  ]);
 
   const handleCreateOrderPending = async () => {
     if (!user?.id) {
       toast.error('Vui lòng đăng nhập để thanh toán');
       return;
     }
-    const result = await createOrder(user.id);
-    
+    await createOrder(user.id);
+
     // call api to create payment url and redirect to payment page
   };
 
@@ -887,7 +986,9 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
                           height={48}
                           className="rounded-lg object-contain"
                         />
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">MoMo</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          MoMo
+                        </span>
                         {selectedPaymentMethod === PAYMENT_METHODS.MOMO && (
                           <CheckCircle className="h-4 w-4 text-pink-500" />
                         )}
@@ -909,7 +1010,9 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
                           height={48}
                           className="rounded-lg object-contain"
                         />
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">VNPay</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          VNPay
+                        </span>
                         {selectedPaymentMethod === PAYMENT_METHODS.VNPAY && (
                           <CheckCircle className="h-4 w-4 text-blue-500" />
                         )}
@@ -992,181 +1095,12 @@ export default function SeatBookingPage({ showTimeId }: SeatBookingPageProps) {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Xác nhận đặt vé
-            </DialogTitle>
-            <DialogDescription>Kiểm tra lại thông tin trước khi thanh toán</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-              <img
-                src={movie?.thumbnail || '/placeholder.png'}
-                alt={movie?.title}
-                className="h-24 w-16 rounded-md object-cover shadow"
-              />
-              <div>
-                <p className="text-lg font-bold">{movie?.title}</p>
-                <p className="text-sm text-gray-500">
-                  {room?.name} • {start.time}
-                </p>
-                <div className="mt-1 flex gap-2">
-                  <Badge>{room?.format?.name || '2D'}</Badge>
-                  <Badge variant="outline">
-                    {showTimeDetail.day_type === 'WEEKEND' ? 'Cuối tuần' : 'Ngày thường'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Seat Details */}
-            <div className="space-y-2">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <Ticket className="h-4 w-4" />
-                Ghế đã chọn ({selectedSeats.length}):
-              </p>
-              <div className="max-h-32 space-y-1 overflow-y-auto">
-                {selectedSeats.map((seat) => {
-                  const seatType = seat.seat_type?.name || seat.seat_type?.type || 'Standard';
-                  const price = getPrice(
-                    room?.format?.id as string,
-                    seat.seat_type?.id as string,
-                    showTimeDetail.day_type as string
-                  );
-                  return (
-                    <div
-                      key={seat.id}
-                      className="flex items-center justify-between rounded bg-gray-50 px-2 py-1 text-sm dark:bg-gray-800"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {seat.seat_number}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{seatType}</span>
-                      </div>
-                      <span className="text-xs font-medium">{formatPrice(price)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Combos */}
-            {selectedCombos.length > 0 && (
-              <div className="space-y-2">
-                <p className="flex items-center gap-2 text-sm font-semibold">
-                  <UtensilsCrossed className="h-4 w-4" />
-                  Combo ({selectedCombos.length}):
-                </p>
-                <div className="space-y-2">
-                  {selectedCombos.map((combo) => {
-                    const details = selectedComboDetails.get(combo.id!);
-                    return (
-                      <div key={combo.id} className="rounded bg-gray-50 px-2 py-1 dark:bg-gray-800">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{combo.name}</span>
-                          <span className="text-sm font-medium">
-                            {formatPrice(combo.total_price || 0)}
-                          </span>
-                        </div>
-                        {details?.combo_items && details.combo_items.length > 0 && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            Bao gồm:{' '}
-                            {details.combo_items
-                              .map(
-                                (item: any) =>
-                                  `${item.menu_item?.name || 'Unknown'} x${item.quantity || 1}`
-                              )
-                              .join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Menu Items */}
-            {selectedMenuItems.length > 0 && (
-              <div className="space-y-2">
-                <p className="flex items-center gap-2 text-sm font-semibold">
-                  <Gift className="h-4 w-4" />
-                  Món lẻ ({selectedMenuItems.length}):
-                </p>
-                <div className="space-y-1">
-                  {selectedMenuItems.map((m) => (
-                    <div key={m.item.id} className="flex justify-between text-sm">
-                      <span>
-                        {m.item.name} x{m.quantity}
-                      </span>
-                      <span className="font-medium">{formatPrice(m.item.price * m.quantity)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Event */}
-            {selectedEvent && (
-              <div className="flex items-center justify-between rounded-lg bg-purple-50 p-2 dark:bg-purple-950/30">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm">Sự kiện: {selectedEvent.name}</span>
-                </div>
-                {selectedEvent.discount && selectedEvent.discount.is_active && (
-                  <Badge className="bg-green-500">
-                    -{selectedEvent.discount.discount_percent}%
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Tạm tính:</span>
-                <span>{formatPrice(totals.subtotal)}</span>
-              </div>
-              {totals.discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Giảm giá ({totals.discountPercent}%):</span>
-                  <span>-{formatPrice(totals.discountAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm text-orange-600">
-                <span>Phí dịch vụ ({totals.serviceVatPercent}%):</span>
-                <span>{formatPrice(totals.serviceVat)}</span>
-              </div>
-              <div className="flex items-center justify-between border-t pt-2">
-                <span className="text-lg font-bold">Tổng tiền:</span>
-                <span className="text-2xl font-bold text-orange-600">
-                  {formatPrice(totals.total)}
-                </span>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
-              Hủy
-            </Button>
-            <Button
-              onClick={handleCreateOrderPending}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Xác nhận thanh toán
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BookingConfirmationDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        bookingDetails={bookingDetailsForConfirm}
+        onConfirm={handleCreateOrderPending}
+      />
 
       {/* Combo Detail Dialog */}
       <Dialog open={comboDetailDialogOpen} onOpenChange={setComboDetailDialogOpen}>

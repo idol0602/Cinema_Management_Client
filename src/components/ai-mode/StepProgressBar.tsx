@@ -1,89 +1,78 @@
-"use client"
+'use client';
 
-import { cn } from "@/lib/utils"
-import { Film, Clock, Armchair, ShoppingCart, CreditCard, Check } from "lucide-react"
+import { cn } from '@/lib/utils';
+import { Film, Clock, Armchair, ShoppingCart, CreditCard, Check } from 'lucide-react';
 
 const steps = [
-  { id: 0, label: "Chọn phim", icon: Film },
-  { id: 1, label: "Chọn suất chiếu", icon: Clock },
-  { id: 2, label: "Chọn ghế", icon: Armchair },
-  { id: 3, label: "Tùy chọn đi kèm", icon: ShoppingCart },
-  { id: 4, label: "Thanh toán", icon: CreditCard },
-]
+  { id: 0, label: 'Chọn phim', icon: Film },
+  { id: 1, label: 'Chọn suất chiếu', icon: Clock },
+  { id: 2, label: 'Chọn ghế', icon: Armchair },
+  { id: 3, label: 'Tùy chọn đi kèm', icon: ShoppingCart },
+  { id: 4, label: 'Thanh toán', icon: CreditCard },
+];
 
 interface StepProgressBarProps {
-  currentStep: number
-  onStepClick?: (step: number) => void
+  currentStep: number;
 }
 
-export function StepProgressBar({ currentStep, onStepClick }: StepProgressBarProps) {
+export function StepProgressBar({ currentStep }: StepProgressBarProps) {
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div className="w-full rounded-xl border border-gray-200 bg-white px-6 py-4 shadow-md dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center justify-between">
         {steps.map((step, index) => {
-          const Icon = step.icon
-          const isCompleted = currentStep > step.id
-          const isCurrent = currentStep === step.id
-          const isUpcoming = currentStep < step.id
+          const Icon = step.icon;
+          const isCompleted = currentStep > step.id;
+          const isCurrent = currentStep === step.id;
+          const isUpcoming = currentStep < step.id;
 
           return (
-            <div key={step.id} className="flex items-center flex-1 last:flex-none">
+            <div key={step.id} className="flex flex-1 items-center last:flex-none">
               {/* Step Circle */}
-              <button
-                onClick={() => onStepClick?.(step.id)}
-                className={cn(
-                  "flex items-center gap-2 group transition-all duration-300",
-                  onStepClick && "cursor-pointer"
-                )}
-              >
+              <div className="flex items-center gap-2 transition-all duration-300">
                 <div
                   className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 shrink-0",
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300',
                     isCompleted &&
-                      "bg-gradient-to-r from-green-500 to-emerald-500 border-green-500 text-white shadow-lg shadow-green-500/30",
+                      'border-green-500 bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30',
                     isCurrent &&
-                      "bg-gradient-to-r from-orange-500 to-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/30 scale-110",
+                      'scale-110 border-orange-500 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
                     isUpcoming &&
-                      "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"
+                      'border-gray-300 bg-gray-100 text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
                   )}
                 >
-                  {isCompleted ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <Icon className="w-5 h-5" />
-                  )}
+                  {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                 </div>
                 <span
                   className={cn(
-                    "text-sm font-medium hidden lg:block whitespace-nowrap transition-colors",
-                    isCompleted && "text-green-600 dark:text-green-400",
-                    isCurrent && "text-orange-600 dark:text-orange-400 font-semibold",
-                    isUpcoming && "text-gray-400 dark:text-gray-500"
+                    'hidden whitespace-nowrap text-sm font-medium transition-colors lg:block',
+                    isCompleted && 'text-green-600 dark:text-green-400',
+                    isCurrent && 'font-semibold text-orange-600 dark:text-orange-400',
+                    isUpcoming && 'text-gray-400 dark:text-gray-500'
                   )}
                 >
                   {step.label}
                 </span>
-              </button>
+              </div>
 
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="flex-1 mx-3 h-0.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                <div className="mx-3 h-0.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all duration-500",
+                      'h-full rounded-full transition-all duration-500',
                       isCompleted
-                        ? "w-full bg-gradient-to-r from-green-500 to-emerald-500"
+                        ? 'w-full bg-gradient-to-r from-green-500 to-emerald-500'
                         : isCurrent
-                        ? "w-1/2 bg-gradient-to-r from-orange-500 to-orange-600"
-                        : "w-0"
+                          ? 'w-1/2 bg-gradient-to-r from-orange-500 to-orange-600'
+                          : 'w-0'
                     )}
                   />
                 </div>
               )}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

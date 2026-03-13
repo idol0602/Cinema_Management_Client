@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useShowTimes } from "@/hooks/useShowTimes"
-import { useRooms } from "@/hooks/useRooms"
-import { showTimePaginateConfig } from "@/config/paginate/show_time.config"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect } from 'react';
+import { useShowTimes } from '@/hooks/useShowTimes';
+import { useRooms } from '@/hooks/useRooms';
+import { showTimePaginateConfig } from '@/config/paginate/show_time.config';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   SlidersHorizontal,
   ChevronLeft,
@@ -26,149 +26,184 @@ import {
   Ticket,
   Monitor,
   ArrowUpDown,
-} from "lucide-react"
-import type { ShowTimeType } from "@/types/showTime.type"
-import Link from "next/link"
+} from 'lucide-react';
+import type { ShowTimeType } from '@/types/showTime.type';
+import Link from 'next/link';
 
 interface ShowTimeListProps {
-  initialShowTimes?: ShowTimeType[]
-  movieId?: string
+  initialShowTimes?: ShowTimeType[];
+  movieId?: string;
+  disableFetch?: boolean;
 }
 
-export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListProps) {
-  const [page, setPage] = useState(1)
-  const [sortColumn, setSortColumn] = useState("")
-  const [orderColumn, setOrderColumn] = useState("")
-  const [dayTypeFilter, setDayTypeFilter] = useState("")
-  const [roomFilter, setRoomFilter] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: ShowTimeListProps) {
+  const [page, setPage] = useState(1);
+  const [sortColumn, setSortColumn] = useState('');
+  const [orderColumn, setOrderColumn] = useState('');
+  const [dayTypeFilter, setDayTypeFilter] = useState('');
+  const [roomFilter, setRoomFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const useAiDataOnly =
+    !!disableFetch &&
+    page === 1 &&
+    !sortColumn &&
+    !orderColumn &&
+    !dayTypeFilter &&
+    !roomFilter &&
+    !startDate &&
+    !endDate;
 
   // Fetch rooms for filter
-  const { data: rooms } = useRooms()
+  const { data: rooms } = useRooms();
 
   // Build filter object
   const buildFilter = () => {
-    const filter: Record<string, any> = { is_active: true }
+    const filter: Record<string, any> = { is_active: true };
     if (movieId) {
-      filter.movie_id = movieId
+      filter.movie_id = movieId;
     }
     if (dayTypeFilter) {
-      filter.day_type = dayTypeFilter
+      filter.day_type = dayTypeFilter;
     }
     if (roomFilter) {
-      filter.room_id = roomFilter
+      filter.room_id = roomFilter;
     }
     // Default: only show showtimes from today onwards
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     if (startDate) {
-      filter.start_time = filter.start_time || {}
-      filter.start_time.$gte = `${startDate}T00:00:00Z`
+      filter.start_time = filter.start_time || {};
+      filter.start_time.$gte = `${startDate}T00:00:00Z`;
     } else {
-      filter.start_time = filter.start_time || {}
-      filter.start_time.$gte = today.toISOString()
+      filter.start_time = filter.start_time || {};
+      filter.start_time.$gte = today.toISOString();
     }
     if (endDate) {
-      filter.end_time = filter.end_time || {}
-      filter.end_time.$lte = `${endDate}T23:59:00Z`
+      filter.end_time = filter.end_time || {};
+      filter.end_time.$lte = `${endDate}T23:59:00Z`;
     }
-    return filter
-  }
+    return filter;
+  };
 
   // Build sortBy string
   const buildSortBy = () => {
     if (sortColumn && orderColumn) {
-      return `${sortColumn}:${orderColumn}`
+      return `${sortColumn}:${orderColumn}`;
     } else if (sortColumn) {
-      return `${sortColumn}:DESC`
+      return `${sortColumn}:DESC`;
     }
-    return showTimePaginateConfig.defaultSortBy[0][0] + ":" + showTimePaginateConfig.defaultSortBy[0][1]
-  }
+    return (
+      showTimePaginateConfig.defaultSortBy[0][0] + ':' + showTimePaginateConfig.defaultSortBy[0][1]
+    );
+  };
 
-  const { data: response, isLoading } = useShowTimes({
+  const { data: _response, isLoading } = useShowTimes({
     page,
     limit: showTimePaginateConfig.defaultLimit,
     sortBy: buildSortBy(),
     filter: buildFilter(),
-    initialData: page === 1 && !dayTypeFilter && !roomFilter && !startDate && !endDate
-      ? initialShowTimes
-      : undefined,
-  })
+    initialData:
+      page === 1 && !dayTypeFilter && !roomFilter && !startDate && !endDate
+        ? initialShowTimes
+        : undefined,
+    enabled: !useAiDataOnly,
+  });
 
-  const showTimes = response?.data || []
-  const meta = response?.meta
+  const response =
+    useAiDataOnly && initialShowTimes
+      ? ({
+          data: initialShowTimes,
+          meta: {
+            totalItems: initialShowTimes.length,
+            currentPage: 1,
+            totalPages: 1,
+            itemsPerPage: initialShowTimes.length,
+          },
+        } as any)
+      : _response;
 
-
+  const showTimes = response?.data || [];
+  const meta = response?.meta;
 
   // Auto-search when filters change
   useEffect(() => {
-    setPage(1)
-  }, [sortColumn, orderColumn, dayTypeFilter, roomFilter, startDate, endDate])
+    setPage(1);
+  }, [sortColumn, orderColumn, dayTypeFilter, roomFilter, startDate, endDate]);
 
   const handleClearFilter = (filterType: string) => {
-    if (filterType === "sort") {
-      setSortColumn("")
-      setOrderColumn("")
+    if (filterType === 'sort') {
+      setSortColumn('');
+      setOrderColumn('');
     }
-    if (filterType === "dayType") {
-      setDayTypeFilter("")
+    if (filterType === 'dayType') {
+      setDayTypeFilter('');
     }
-    if (filterType === "room") {
-      setRoomFilter("")
+    if (filterType === 'room') {
+      setRoomFilter('');
     }
-    if (filterType === "date") {
-      setStartDate("")
-      setEndDate("")
+    if (filterType === 'date') {
+      setStartDate('');
+      setEndDate('');
     }
-  }
+  };
 
   // Format datetime
   const formatDateTime = (dateStr: string) => {
-    const d = new Date(dateStr)
+    const d = new Date(dateStr);
     return {
-      date: d.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }),
-      time: d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-    }
-  }
+      date: d.toLocaleDateString('vi-VN', {
+        weekday: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }),
+      time: d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+    };
+  };
 
   const getDayTypeBadge = (dayType?: string) => {
-    if (!dayType) return <Badge variant="outline">N/A</Badge>
-    if (dayType.toLowerCase() === "weekend") {
-      return <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs">Cuối tuần</Badge>
+    if (!dayType) return <Badge variant="outline">N/A</Badge>;
+    if (dayType.toLowerCase() === 'weekend') {
+      return (
+        <Badge className="bg-purple-500 text-xs text-white hover:bg-purple-600">Cuối tuần</Badge>
+      );
     }
-    return <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs">Ngày thường</Badge>
-  }
+    return <Badge className="bg-blue-500 text-xs text-white hover:bg-blue-600">Ngày thường</Badge>;
+  };
 
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+            <h1 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
               Lịch Chiếu
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
               Tìm và đặt vé cho suất chiếu yêu thích
             </p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
             {/* Room Filter */}
-            <Select value={roomFilter || "ALL"} onValueChange={(val) => setRoomFilter(val === "ALL" ? "" : val)}>
+            <Select
+              value={roomFilter || 'ALL'}
+              onValueChange={(val) => setRoomFilter(val === 'ALL' ? '' : val)}
+            >
               <SelectTrigger className="border-gray-300 dark:border-gray-600">
-                <MapPin className="w-4 h-4 mr-2" />
+                <MapPin className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Phòng" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả phòng</SelectItem>
                 {rooms?.map((room) => (
-                  <SelectItem key={room.id} value={room.id || ""}>
+                  <SelectItem key={room.id} value={room.id || ''}>
                     {room.name}
                   </SelectItem>
                 ))}
@@ -176,40 +211,54 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
             </Select>
 
             {/* Day Type Filter */}
-            <Select value={dayTypeFilter || "ALL"} onValueChange={(val) => setDayTypeFilter(val === "ALL" ? "" : val)}>
+            <Select
+              value={dayTypeFilter || 'ALL'}
+              onValueChange={(val) => setDayTypeFilter(val === 'ALL' ? '' : val)}
+            >
               <SelectTrigger className="border-gray-300 dark:border-gray-600">
                 <SelectValue placeholder="Loại ngày" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả</SelectItem>
-                {showTimePaginateConfig.filterableColumns.day_type?.map((opt: { value: string; label: string }) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                {showTimePaginateConfig.filterableColumns.day_type?.map(
+                  (opt: { value: string; label: string }) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
 
             {/* Sort By */}
-            <Select value={sortColumn || "DEFAULT"} onValueChange={(val) => setSortColumn(val === "DEFAULT" ? "" : val)}>
+            <Select
+              value={sortColumn || 'DEFAULT'}
+              onValueChange={(val) => setSortColumn(val === 'DEFAULT' ? '' : val)}
+            >
               <SelectTrigger className="border-gray-300 dark:border-gray-600">
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="DEFAULT">Mặc định</SelectItem>
-                {showTimePaginateConfig.sortableColumns.map((col: { value: string; label: string }) => (
-                  <SelectItem key={col.value} value={col.value}>
-                    {col.label}
-                  </SelectItem>
-                ))}
+                {showTimePaginateConfig.sortableColumns.map(
+                  (col: { value: string; label: string }) => (
+                    <SelectItem key={col.value} value={col.value}>
+                      {col.label}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
 
             {/* Sort Order */}
-            <Select value={orderColumn || "DEFAULT"} onValueChange={(val) => setOrderColumn(val === "DEFAULT" ? "" : val)} disabled={!sortColumn}>
+            <Select
+              value={orderColumn || 'DEFAULT'}
+              onValueChange={(val) => setOrderColumn(val === 'DEFAULT' ? '' : val)}
+              disabled={!sortColumn}
+            >
               <SelectTrigger className="border-gray-300 dark:border-gray-600">
-                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <ArrowUpDown className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
               <SelectContent>
@@ -242,26 +291,52 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
 
           {/* Active Filters */}
           {(dayTypeFilter || roomFilter || sortColumn || startDate || endDate) && (
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Bộ lọc:</span>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">Bộ lọc:</span>
               {roomFilter && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("room")} className="h-7 text-xs">
-                  Phòng: {rooms?.find(r => r.id === roomFilter)?.name} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('room')}
+                  className="h-7 text-xs"
+                >
+                  Phòng: {rooms?.find((r) => r.id === roomFilter)?.name} ×
                 </Button>
               )}
               {dayTypeFilter && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("dayType")} className="h-7 text-xs">
-                  {dayTypeFilter === "weekday" ? "Ngày thường" : "Cuối tuần"} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('dayType')}
+                  className="h-7 text-xs"
+                >
+                  {dayTypeFilter === 'weekday' ? 'Ngày thường' : 'Cuối tuần'} ×
                 </Button>
               )}
               {sortColumn && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("sort")} className="h-7 text-xs">
-                  Sắp xếp: {showTimePaginateConfig.sortableColumns.find((c: { value: string }) => c.value === sortColumn)?.label} {orderColumn === "ASC" ? "↑" : "↓"} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('sort')}
+                  className="h-7 text-xs"
+                >
+                  Sắp xếp:{' '}
+                  {
+                    showTimePaginateConfig.sortableColumns.find(
+                      (c: { value: string }) => c.value === sortColumn
+                    )?.label
+                  }{' '}
+                  {orderColumn === 'ASC' ? '↑' : '↓'} ×
                 </Button>
               )}
               {(startDate || endDate) && (
-                <Button variant="secondary" size="sm" onClick={() => handleClearFilter("date")} className="h-7 text-xs">
-                  Ngày: {startDate || "..."} — {endDate || "..."} ×
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleClearFilter('date')}
+                  className="h-7 text-xs"
+                >
+                  Ngày: {startDate || '...'} — {endDate || '...'} ×
                 </Button>
               )}
             </div>
@@ -270,9 +345,12 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
 
         {/* ShowTimes List */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow border border-gray-200 dark:border-gray-700 space-y-3">
+              <div
+                key={i}
+                className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 shadow dark:border-gray-700 dark:bg-gray-800"
+              >
                 <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
                 <Skeleton className="h-4 w-2/3" />
@@ -282,32 +360,32 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
           </div>
         ) : showTimes && showTimes.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {showTimes.map((showTime) => {
-                const start = formatDateTime(showTime.start_time)
-                const end = showTime.end_time ? formatDateTime(showTime.end_time) : null
+                const start = formatDateTime(showTime.start_time);
+                const end = showTime.end_time ? formatDateTime(showTime.end_time) : null;
 
                 return (
                   <div
                     key={showTime.id}
-                    className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-300 flex flex-col"
+                    className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md transition-all duration-300 hover:border-orange-300 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-orange-700"
                   >
-                    <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex flex-1 flex-col p-5">
                       {/* Movie Title */}
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3 line-clamp-1">
-                        {showTime.movies?.title || "N/A"}
+                      <h3 className="mb-3 line-clamp-1 text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {showTime.movies?.title || 'N/A'}
                       </h3>
 
-                      <div className="space-y-2.5 flex-1">
+                      <div className="flex-1 space-y-2.5">
                         {/* Room & Format */}
                         <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">
-                            {showTime.rooms?.name || "N/A"}
+                          <MapPin className="h-4 w-4 shrink-0 text-orange-500" />
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            {showTime.rooms?.name || 'N/A'}
                           </span>
                           {showTime.rooms && (showTime.rooms as any).formats?.name && (
-                            <Badge variant="outline" className="text-xs ml-1">
-                              <Monitor className="w-3 h-3 mr-1" />
+                            <Badge variant="outline" className="ml-1 text-xs">
+                              <Monitor className="mr-1 h-3 w-3" />
                               {(showTime.rooms as any).formats.name}
                             </Badge>
                           )}
@@ -315,21 +393,21 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
 
                         {/* Date */}
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Calendar className="w-4 h-4 text-orange-500 shrink-0" />
+                          <Calendar className="h-4 w-4 shrink-0 text-orange-500" />
                           <span>{start.date}</span>
                           <span className="ml-auto">{getDayTypeBadge(showTime.day_type)}</span>
                         </div>
 
                         {/* Time Range */}
                         <div className="flex items-center gap-2 text-sm">
-                          <Clock className="w-4 h-4 text-orange-500 shrink-0" />
-                          <span className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                          <Clock className="h-4 w-4 shrink-0 text-orange-500" />
+                          <span className="text-base font-semibold text-gray-900 dark:text-gray-100">
                             {start.time}
                           </span>
                           {end && (
                             <>
                               <span className="text-gray-400">—</span>
-                              <span className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                              <span className="text-base font-semibold text-gray-900 dark:text-gray-100">
                                 {end.time}
                               </span>
                             </>
@@ -338,29 +416,27 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
                       </div>
 
                       {/* CTA */}
-                      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="mt-4 border-t border-gray-100 pt-3 dark:border-gray-700">
                         <Link href={`/show-times/${showTime.id}`} className="block">
-                          <Button
-                            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-md"
-                          >
-                            <Ticket className="w-4 h-4 mr-2" />
+                          <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 font-semibold text-white shadow-md hover:from-orange-600 hover:to-orange-700">
+                            <Ticket className="mr-2 h-4 w-4" />
                             Đặt vé
                           </Button>
                         </Link>
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-12">
+              <div className="mt-12 flex items-center justify-between">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{" "}
-                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)}{" "}
-                  của {meta.totalItems} suất chiếu
+                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
+                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
+                  {meta.totalItems} suất chiếu
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -375,25 +451,20 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
                   </Button>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
-                      .filter(
-                        (p) =>
-                          p === 1 ||
-                          p === meta.totalPages ||
-                          Math.abs(p - page) <= 1
-                      )
+                      .filter((p) => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                       .map((p, index, array) => (
                         <div key={p} className="flex items-center">
                           {index > 0 && array[index - 1] !== p - 1 && (
                             <span className="px-2 text-gray-400">...</span>
                           )}
                           <Button
-                            variant={page === p ? "default" : "outline"}
+                            variant={page === p ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPage(p)}
                             className={
                               page === p
-                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white min-w-10"
-                                : "hover:bg-orange-50 dark:hover:bg-orange-950 min-w-10"
+                                ? 'min-w-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                : 'min-w-10 hover:bg-orange-50 dark:hover:bg-orange-950'
                             }
                           >
                             {p}
@@ -416,9 +487,9 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
             )}
           </>
         ) : (
-          <div className="text-center py-16">
-            <Film className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <div className="py-16 text-center">
+            <Film className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+            <h3 className="mb-2 text-xl font-semibold text-gray-700 dark:text-gray-300">
               Không tìm thấy suất chiếu nào
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
@@ -428,5 +499,5 @@ export function ShowTimeList({ initialShowTimes = [], movieId }: ShowTimeListPro
         )}
       </div>
     </section>
-  )
+  );
 }

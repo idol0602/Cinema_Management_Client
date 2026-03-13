@@ -38,11 +38,11 @@ export const showTimePaginateConfig = {
     //start_time
     day_type: [
       {
-      value: "weekday",
+      value: "WEEKDAY",
       label: "Ngày thường",
       },
       {
-      value: "weekend",
+      value: "WEEKEND",
       label: "Cuối tuần",
       },
     ],

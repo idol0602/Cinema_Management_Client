@@ -1,160 +1,229 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { useTicketPrices } from "@/hooks/useTicketPrices"
-import { ticketPricePaginateConfig } from "@/config/paginate/ticket_price.config"
-import { TicketPriceCard } from "./TicketPriceCard"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import type { TicketPriceType } from "@/types/ticketPrice.type"
-import type { FormatType } from "@/types/format.type"
-import type { SeatTypeDetailType } from "@/types/seatTypeDetail.type"
+import React, { useState, useEffect } from 'react';
+import { useTicketPrices } from '@/hooks/useTicketPrices';
+import { ticketPricePaginateConfig } from '@/config/paginate/ticket_price.config';
+import { TicketPriceCard } from './TicketPriceCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { TicketPriceType } from '@/types/ticketPrice.type';
+import type { FormatType } from '@/types/format.type';
+import type { SeatTypeDetailType } from '@/types/seatTypeDetail.type';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Search, Filter, SlidersHorizontal, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+} from '@/components/ui/select';
+import {
+  Search,
+  Filter,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+} from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TicketPriceListProps {
-  initialTicketPrices?: TicketPriceType[]
-  formats: FormatType[]
-  seatTypes: SeatTypeDetailType[]
+  initialTicketPrices?: TicketPriceType[];
+  formats: FormatType[];
+  seatTypes: SeatTypeDetailType[];
+  disableFetch?: boolean;
 }
 
-export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }: TicketPriceListProps) {
-  const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchColumn, setSearchColumn] = useState("")
-  const [sortColumn, setSortColumn] = useState("")
-  const [orderColumn, setOrderColumn] = useState("")
-  const [dayTypeColumn, setDayTypeColumn] = useState("")
-  const [seatTypeIdColumn, setSeatTypeIdColumn] = useState("")
-  const [formatIdColumn, setFormatIdColumn] = useState("")
+export function TicketPriceList({
+  initialTicketPrices = [],
+  formats,
+  seatTypes,
+  disableFetch,
+}: TicketPriceListProps) {
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchColumn, setSearchColumn] = useState('');
+  const [sortColumn, setSortColumn] = useState('');
+  const [orderColumn, setOrderColumn] = useState('');
+  const [dayTypeColumn, setDayTypeColumn] = useState('');
+  const [seatTypeIdColumn, setSeatTypeIdColumn] = useState('');
+  const [formatIdColumn, setFormatIdColumn] = useState('');
+
+  const useAiDataOnly =
+    !!disableFetch &&
+    page === 1 &&
+    !searchQuery &&
+    !searchColumn &&
+    !sortColumn &&
+    !orderColumn &&
+    !dayTypeColumn &&
+    !seatTypeIdColumn &&
+    !formatIdColumn;
 
   const buildFilter = () => {
-    const filter: Record<string, any> = {}
-    if (dayTypeColumn) filter.day_type = dayTypeColumn
-    if (seatTypeIdColumn) filter.seat_type_id = seatTypeIdColumn
-    if (formatIdColumn) filter.format_id = formatIdColumn
-    return filter
-  }
+    const filter: Record<string, any> = {};
+    if (dayTypeColumn) filter.day_type = dayTypeColumn;
+    if (seatTypeIdColumn) filter.seat_type_id = seatTypeIdColumn;
+    if (formatIdColumn) filter.format_id = formatIdColumn;
+    return filter;
+  };
 
   const buildSortBy = () => {
-    if (sortColumn && orderColumn) return `${sortColumn}:${orderColumn}`
-    if (sortColumn) return `${sortColumn}:DESC`
-    return ticketPricePaginateConfig.defaultSortBy[0] + ":" + ticketPricePaginateConfig.defaultSortBy[1]
-  }
+    if (sortColumn && orderColumn) return `${sortColumn}:${orderColumn}`;
+    if (sortColumn) return `${sortColumn}:DESC`;
+    return (
+      ticketPricePaginateConfig.defaultSortBy[0] + ':' + ticketPricePaginateConfig.defaultSortBy[1]
+    );
+  };
 
-  const { data: ticketPricesResponse, isLoading } = useTicketPrices({
+  const { data: _ticketPricesResponse, isLoading } = useTicketPrices({
     page,
     limit: ticketPricePaginateConfig.defaultLimit,
     search: searchQuery || undefined,
     searchBy: searchColumn || undefined,
     sortBy: buildSortBy(),
     filter: buildFilter(),
-    initialData: page === 1 && !searchQuery && !dayTypeColumn && !seatTypeIdColumn && !formatIdColumn ? initialTicketPrices : undefined,
-  })
+    initialData:
+      page === 1 && !searchQuery && !dayTypeColumn && !seatTypeIdColumn && !formatIdColumn
+        ? initialTicketPrices
+        : undefined,
+    enabled: !useAiDataOnly,
+  });
 
-  const ticketPrices = ticketPricesResponse?.data || []
-  const meta = ticketPricesResponse?.meta
+  const ticketPricesResponse =
+    useAiDataOnly && initialTicketPrices
+      ? ({
+          data: initialTicketPrices,
+          meta: {
+            totalItems: initialTicketPrices.length,
+            currentPage: 1,
+            totalPages: 1,
+            itemsPerPage: initialTicketPrices.length,
+          },
+        } as any)
+      : _ticketPricesResponse;
+
+  const ticketPrices = ticketPricesResponse?.data || [];
+  const meta = ticketPricesResponse?.meta;
 
   const getFormatName = (formatId: string) => {
-    const format = formats.find((f) => f.id === formatId)
-    return format ? format.name : formatId
-  }
+    const format = formats.find((f) => f.id === formatId);
+    return format ? format.name : formatId;
+  };
 
   const getSeatTypeName = (seatTypeId: string) => {
-    const seatType = seatTypes.find((s) => s.id === seatTypeId)
-    return seatType ? seatType.name : seatTypeId
-  }
+    const seatType = seatTypes.find((s) => s.id === seatTypeId);
+    return seatType ? seatType.name : seatTypeId;
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") setPage(1)
-  }
+    if (e.key === 'Enter') setPage(1);
+  };
 
   useEffect(() => {
-    setPage(1)
-  }, [dayTypeColumn, seatTypeIdColumn, formatIdColumn, sortColumn, orderColumn, searchColumn])
+    setPage(1);
+  }, [dayTypeColumn, seatTypeIdColumn, formatIdColumn, sortColumn, orderColumn, searchColumn, searchQuery]);
 
   const handleClearFilter = (filterType: string) => {
-    if (filterType === "dayType") setDayTypeColumn("")
-    if (filterType === "seatType") setSeatTypeIdColumn("")
-    if (filterType === "format") setFormatIdColumn("")
-    if (filterType === "sort") { setSortColumn(""); setOrderColumn("") }
-    if (filterType === "search") { setSearchQuery(""); setSearchColumn("") }
-  }
+    if (filterType === 'dayType') setDayTypeColumn('');
+    if (filterType === 'seatType') setSeatTypeIdColumn('');
+    if (filterType === 'format') setFormatIdColumn('');
+    if (filterType === 'sort') {
+      setSortColumn('');
+      setOrderColumn('');
+    }
+    if (filterType === 'search') {
+      setSearchQuery('');
+      setSearchColumn('');
+    }
+  };
 
   return (
     <div>
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           {/* Search Input */}
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="relative md:col-span-2">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="Tìm kiếm giá vé..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="pl-10 border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500"
+              className="border-gray-300 pl-10 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600"
             />
           </div>
 
           {/* Day Type Filter */}
-          <Select value={dayTypeColumn || "ALL"} onValueChange={(val) => setDayTypeColumn(val === "ALL" ? "" : val)}>
-            <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500">
-              <Filter className="w-4 h-4 mr-2" />
+          <Select
+            value={dayTypeColumn || 'ALL'}
+            onValueChange={(val) => setDayTypeColumn(val === 'ALL' ? '' : val)}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600">
+              <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Loại ngày" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tất cả</SelectItem>
               {ticketPricePaginateConfig.filterableColumns.day_type.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           {/* Format Filter */}
-          <Select value={formatIdColumn || "ALL"} onValueChange={(val) => setFormatIdColumn(val === "ALL" ? "" : val)}>
-            <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500">
+          <Select
+            value={formatIdColumn || 'ALL'}
+            onValueChange={(val) => setFormatIdColumn(val === 'ALL' ? '' : val)}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600">
               <SelectValue placeholder="Định dạng" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tất cả</SelectItem>
               {formats.map((f) => (
-                <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
+                <SelectItem key={f.id} value={f.id!}>
+                  {f.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           {/* Seat Type Filter */}
-          <Select value={seatTypeIdColumn || "ALL"} onValueChange={(val) => setSeatTypeIdColumn(val === "ALL" ? "" : val)}>
-            <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500">
+          <Select
+            value={seatTypeIdColumn || 'ALL'}
+            onValueChange={(val) => setSeatTypeIdColumn(val === 'ALL' ? '' : val)}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600">
               <SelectValue placeholder="Loại ghế" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tất cả</SelectItem>
               {seatTypes.map((s) => (
-                <SelectItem key={s.id} value={s.id!}>{s.name}</SelectItem>
+                <SelectItem key={s.id} value={s.id!}>
+                  {s.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           {/* Sort By */}
-          <Select value={sortColumn || "DEFAULT"} onValueChange={(val) => setSortColumn(val === "DEFAULT" ? "" : val)}>
-            <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500">
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
+          <Select
+            value={sortColumn || 'DEFAULT'}
+            onValueChange={(val) => setSortColumn(val === 'DEFAULT' ? '' : val)}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600">
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Sắp xếp" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="DEFAULT">Mặc định</SelectItem>
               {ticketPricePaginateConfig.sortableColumns.map((col) => (
-                <SelectItem key={col.value} value={col.value}>{col.label}</SelectItem>
+                <SelectItem key={col.value} value={col.value}>
+                  {col.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -162,31 +231,68 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
 
         {/* Active Filters */}
         {(searchQuery || dayTypeColumn || seatTypeIdColumn || formatIdColumn || sortColumn) && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Bộ lọc đang áp dụng:</span>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">
+              Bộ lọc đang áp dụng:
+            </span>
             {searchQuery && (
-              <Button variant="secondary" size="sm" onClick={() => handleClearFilter("search")} className="h-7 text-xs">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleClearFilter('search')}
+                className="h-7 text-xs"
+              >
                 Tìm: &quot;{searchQuery}&quot; ×
               </Button>
             )}
             {dayTypeColumn && (
-              <Button variant="secondary" size="sm" onClick={() => handleClearFilter("dayType")} className="h-7 text-xs">
-                {ticketPricePaginateConfig.filterableColumns.day_type.find(o => o.value === dayTypeColumn)?.label} ×
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleClearFilter('dayType')}
+                className="h-7 text-xs"
+              >
+                {
+                  ticketPricePaginateConfig.filterableColumns.day_type.find(
+                    (o) => o.value === dayTypeColumn
+                  )?.label
+                }{' '}
+                ×
               </Button>
             )}
             {formatIdColumn && (
-              <Button variant="secondary" size="sm" onClick={() => handleClearFilter("format")} className="h-7 text-xs">
-                {formats.find(f => f.id === formatIdColumn)?.name || "Định dạng"} ×
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleClearFilter('format')}
+                className="h-7 text-xs"
+              >
+                {formats.find((f) => f.id === formatIdColumn)?.name || 'Định dạng'} ×
               </Button>
             )}
             {seatTypeIdColumn && (
-              <Button variant="secondary" size="sm" onClick={() => handleClearFilter("seatType")} className="h-7 text-xs">
-                {seatTypes.find(s => s.id === seatTypeIdColumn)?.name || "Loại ghế"} ×
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleClearFilter('seatType')}
+                className="h-7 text-xs"
+              >
+                {seatTypes.find((s) => s.id === seatTypeIdColumn)?.name || 'Loại ghế'} ×
               </Button>
             )}
             {sortColumn && (
-              <Button variant="secondary" size="sm" onClick={() => handleClearFilter("sort")} className="h-7 text-xs">
-                Sắp xếp: {ticketPricePaginateConfig.sortableColumns.find(c => c.value === sortColumn)?.label} {orderColumn === "ASC" ? "↑" : "↓"} ×
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleClearFilter('sort')}
+                className="h-7 text-xs"
+              >
+                Sắp xếp:{' '}
+                {
+                  ticketPricePaginateConfig.sortableColumns.find((c) => c.value === sortColumn)
+                    ?.label
+                }{' '}
+                {orderColumn === 'ASC' ? '↑' : '↓'} ×
               </Button>
             )}
           </div>
@@ -195,11 +301,14 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
 
       {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="space-y-3 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div
+              key={i}
+              className="space-y-3 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"
+            >
               <Skeleton className="h-14 w-full" />
-              <div className="p-5 space-y-3">
+              <div className="space-y-3 p-5">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-8 w-8 rounded-lg" />
                   <div className="space-y-1">
@@ -225,7 +334,7 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
         </div>
       ) : ticketPrices && ticketPrices.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {ticketPrices.map((item) => (
               <TicketPriceCard
                 key={item.id}
@@ -238,11 +347,11 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-12">
+            <div className="mt-12 flex items-center justify-between">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{" "}
-                {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)}{" "}
-                của {meta.totalItems} giá vé
+                Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
+                {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
+                {meta.totalItems} giá vé
               </div>
 
               <div className="flex items-center gap-2">
@@ -266,13 +375,13 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
                           <span className="px-2 text-gray-400">...</span>
                         )}
                         <Button
-                          variant={page === p ? "default" : "outline"}
+                          variant={page === p ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setPage(p)}
                           className={
                             page === p
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white min-w-10"
-                              : "hover:bg-emerald-50 dark:hover:bg-emerald-950 min-w-10"
+                              ? 'min-w-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
+                              : 'min-w-10 hover:bg-emerald-50 dark:hover:bg-emerald-950'
                           }
                         >
                           {p}
@@ -296,16 +405,14 @@ export function TicketPriceList({ initialTicketPrices = [], formats, seatTypes }
           )}
         </>
       ) : (
-        <div className="text-center py-16">
-          <DollarSign className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <div className="py-16 text-center">
+          <DollarSign className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+          <h3 className="mb-2 text-xl font-semibold text-gray-700 dark:text-gray-300">
             Không tìm thấy giá vé nào
           </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Thử thay đổi bộ lọc hoặc tìm kiếm khác
-          </p>
+          <p className="text-gray-500 dark:text-gray-400">Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
         </div>
       )}
     </div>
-  )
+  );
 }

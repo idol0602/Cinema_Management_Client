@@ -6,16 +6,18 @@ import { defaultOption } from "./option"
 
 interface UseComingSoonMoviesOptions extends PaginationQuery {
   initialData?: MovieType[]
+  enabled?: boolean
 }
 
 export const useComingSoonMovies = (options: UseComingSoonMoviesOptions) => {
-  const { page, limit, sortBy, search, searchBy, filter, initialData } = options
+  const { page, limit, sortBy, search, searchBy, filter, initialData, enabled } = options
 
   return useQuery<PaginatedResponse<MovieType>>({
     queryKey: ["comingSoonMovies", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
     queryFn: async () => {
       return await movieService.findComingSoon({ page, limit, sortBy, search, searchBy, filter })
     },
+    enabled: enabled !== false,
     initialData: initialData
       ? {
           data: initialData,

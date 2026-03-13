@@ -6,6 +6,7 @@ import { defaultOption } from "./option"
 
 interface UseEventsOptions extends PaginationQuery {
   initialData?: EventType[]
+  enabled?: boolean
 }
 
 export const useEvents = (options: UseEventsOptions) => {
@@ -17,6 +18,7 @@ export const useEvents = (options: UseEventsOptions) => {
     searchBy,
     filter,
     initialData,
+    enabled,
   } = options
   return useQuery<PaginatedResponse<EventType>>({
     queryKey: ["events", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
@@ -24,6 +26,7 @@ export const useEvents = (options: UseEventsOptions) => {
       const response = await eventService.findAndPaginate({ page, limit, sortBy, search, searchBy, filter })
       return response as PaginatedResponse<EventType>
     },
+    enabled: enabled !== false,
     initialData: initialData ? {
       data: initialData,
       success: true,
