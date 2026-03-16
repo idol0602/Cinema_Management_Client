@@ -11,6 +11,8 @@ import { ticketPriceService } from '@/services/ticketPrice.service';
 import { discountService } from '@/services/discount.service';
 import { orderService, validateBookingTime } from '@/services/order.service';
 import { showTimeService } from '@/services/showTime.service';
+import { aiBookingService } from '@/services/ai_booking.service';
+import { useAiBookingStore } from '@/store/useAiBookingStore';
 
 import type { ShowTimeDetailType, SeatDetail } from '@/types/showTime.type';
 import type { ComboType, ComboDetailType } from '@/types/combo.type';
@@ -124,6 +126,7 @@ interface BookingStore {
 
   handlePayment: (userId: string) => Promise<any>;
   createOrder: (userId: string) => Promise<any>;
+  createOrderWithAI: (userId: string) => Promise<any>;
   generateOrderData: (userId: string, orderId: string) => any;
 
   resetBooking: () => void;
@@ -725,6 +728,64 @@ export const useBookingStore = create<BookingStore>()(
           window.location.href = paymentUrl;
         } catch (error) {
           console.error('Create order error:', error);
+          toast.error('Có lỗi xảy ra khi tạo đơn hàng');
+          return null;
+        }
+      },
+
+      createOrderWithAI: async () => {
+        try {
+          // Get AI booking state
+          const aiBookingStore = useAiBookingStore.getState();
+          const { paymentMethod } = aiBookingStore;
+
+          // 1. Validate payment method
+          if (!paymentMethod) {
+            toast.error('Vui lòng chọn phương thức thanh toán');
+            return null;
+          }
+
+          // 2. Call AI booking service to create order
+          const orderResponse = await aiBookingService.createOrderWithAi();
+
+          if (!orderResponse.success || !orderResponse.data) {
+            const errorData = orderResponse.error;
+            if (typeof errorData === 'object' && (errorData as any)?.code === 'INSUFFICIENT_STOCK') {
+              toast.error((errorData as any).message || 'Không đủ số lượng trong kho');
+            } else {
+              toast.error(typeof errorData === 'string' ? errorData : 'Không thể tạo đơn hàng');
+            }
+            return null;
+          }
+
+          const createdData = orderResponse.data as any;
+          const createdOrder = createdData.order as OrderType;
+          set({ orderCreating: createdOrder });
+
+          // 3. Create payment URL and redirect to payment gateway
+          const paymentUrlResponse = await orderService.createPaymentUrl({
+            orderId: createdOrder.id as string,
+            amount: createdOrder.total_price,
+            paymentMethod: paymentMethod as PaymentMethod,
+          });
+
+          if (!paymentUrlResponse.success || !paymentUrlResponse.data) {
+            toast.error('Không thể tạo URL thanh toán');
+            return null;
+          }
+
+          const paymentUrlData = paymentUrlResponse.data as PaymentUrlResponseData;
+          const paymentUrl = paymentUrlData.paymentURL;
+
+          // 4. Close dialog and redirect
+          set({ confirmDialogOpen: false });
+          aiBookingStore.setIsAiLoading(false);
+
+          toast.success('Đặt vé thành công!');
+          window.location.href = paymentUrl;
+          return createdOrder;
+        } catch (error) {
+          console.error('Create order with AI error:', error);
           toast.error('Có lỗi xảy ra khi tạo đơn hàng');
           return null;
         }

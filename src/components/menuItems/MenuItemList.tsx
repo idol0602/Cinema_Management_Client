@@ -7,6 +7,7 @@ import { MenuItemCard } from './MenuItemCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { MenuItemType } from '@/types/menuItem.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import {
   Select,
   SelectContent,
@@ -26,10 +27,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface MenuItemListProps {
   initialMenuItems?: MenuItemType[];
+  initialMeta?: PaginationMeta;
   disableFetch?: boolean;
 }
 
-export function MenuItemList({ initialMenuItems = [], disableFetch }: MenuItemListProps) {
+export function MenuItemList({
+  initialMenuItems = [],
+  initialMeta,
+  disableFetch,
+}: MenuItemListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchColumn, setSearchColumn] = useState('');
@@ -75,7 +81,7 @@ export function MenuItemList({ initialMenuItems = [], disableFetch }: MenuItemLi
     useAiDataOnly && initialMenuItems
       ? ({
           data: initialMenuItems,
-          meta: {
+          meta: initialMeta || {
             totalItems: initialMenuItems.length,
             currentPage: 1,
             totalPages: 1,

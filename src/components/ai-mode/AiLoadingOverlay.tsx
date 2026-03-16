@@ -2,10 +2,7 @@
 
 export function AiLoadingOverlay() {
   return (
-    <div
-      className="sticky left-0 top-0 z-10 flex h-full w-full items-center justify-center bg-white/60 backdrop-blur-sm dark:bg-gray-900/60"
-      style={{ marginBottom: '-100%' }}
-    >
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-transparent backdrop-blur-0">
       <div className="flex flex-col items-center gap-4">
         {/* Animated rings */}
         <div className="relative h-16 w-16">

@@ -8,6 +8,7 @@ import { EventDetailDialog } from './EventDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { EventType } from '@/types/event.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import {
   Select,
   SelectContent,
@@ -20,10 +21,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface EventListProps {
   initialEvents?: EventType[];
+  initialMeta?: PaginationMeta;
   disableFetch?: boolean;
 }
 
-export function EventList({ initialEvents = [], disableFetch }: EventListProps) {
+export function EventList({ initialEvents = [], initialMeta, disableFetch }: EventListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchColumn, setSearchColumn] = useState('');
@@ -85,7 +87,7 @@ export function EventList({ initialEvents = [], disableFetch }: EventListProps) 
     useAiDataOnly && initialEvents
       ? ({
           data: initialEvents,
-          meta: {
+          meta: initialMeta || {
             totalItems: initialEvents.length,
             currentPage: 1,
             totalPages: 1,
@@ -105,7 +107,15 @@ export function EventList({ initialEvents = [], disableFetch }: EventListProps) 
 
   useEffect(() => {
     setPage(1);
-  }, [statusColumn, counterColumn, inComboColumn, sortColumn, orderColumn, searchColumn, searchQuery]);
+  }, [
+    statusColumn,
+    counterColumn,
+    inComboColumn,
+    sortColumn,
+    orderColumn,
+    searchColumn,
+    searchQuery,
+  ]);
 
   const handleClearFilter = (filterType: string) => {
     if (filterType === 'status') setStatusColumn('');

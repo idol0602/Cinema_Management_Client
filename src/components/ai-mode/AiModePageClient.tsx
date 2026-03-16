@@ -22,6 +22,7 @@ import type { ComboType } from '@/types/combo.type';
 import type { MenuItemType } from '@/types/menuItem.type';
 import type { FormatType } from '@/types/format.type';
 import type { SeatTypeDetailType } from '@/types/seatTypeDetail.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 
 interface AiModePageClientProps {
   initialNowShowing: MovieType[];
@@ -51,7 +52,7 @@ export function AiModePageClient({
   const [chatPanelWidth, setChatPanelWidth] = useState(380);
   const isDraggingRef = useRef(false);
 
-  const { currentStep, movieId, showTimeId, activeAction, chatData, isAiLoading } =
+  const { currentStep, movieId, showTimeId, activeAction, chatData, chatMeta, isAiLoading } =
     useAiBookingStore();
 
   useEffect(() => {
@@ -86,7 +87,23 @@ export function AiModePageClient({
   // When chatData is set for an action, disable API fetching so components display AI data
   const hasAiData = !!(activeAction && activeAction !== 'other');
   const aiItems = Array.isArray(chatData) ? chatData : [];
-
+  const aiMeta = (chatMeta ?? undefined) as PaginationMeta | undefined;
+  const hasAiMovieData = useMemo(() => {
+    if (aiItems.length === 0) return false;
+    const firstItem = aiItems[0] as any;
+    return !!firstItem?.title;
+  }, [aiItems]);
+  const hasAiNowShowingData = useMemo(() => {
+    return hasAiData && activeAction === 'now-showing' && hasAiMovieData;
+  }, [hasAiData, activeAction, hasAiMovieData]);
+  const hasAiComingSoonData = useMemo(() => {
+    return hasAiData && activeAction === 'comming-soon' && hasAiMovieData;
+  }, [hasAiData, activeAction, hasAiMovieData]);
+  const hasAiShowTimeData = useMemo(() => {
+    if (!(hasAiData && activeAction === 'showtime') || aiItems.length === 0) return false;
+    const firstItem = aiItems[0] as any;
+    return !!firstItem?.start_time;
+  }, [hasAiData, activeAction, aiItems]);
   // Resolve what content to render based on action & step
   const contentView = useMemo(() => {
     // If action is explicitly set (and not "other"/null), use it
@@ -110,12 +127,11 @@ export function AiModePageClient({
         return (
           <MovieList
             key={hasAiData && activeAction === 'now-showing' ? 'ai' : 'default'}
-            initialNowShowing={
-              hasAiData && activeAction === 'now-showing' ? aiItems : initialNowShowing
-            }
+            initialNowShowing={hasAiNowShowingData ? aiItems : initialNowShowing}
             initialComingSoon={initialComingSoon}
             initialMovieTypes={initialMovieTypes}
-            disableFetch={hasAiData && activeAction === 'now-showing'}
+            initialNowShowingMeta={hasAiNowShowingData ? aiMeta : undefined}
+            disableFetch={hasAiNowShowingData}
           />
         );
       case 'comming-soon':
@@ -123,20 +139,20 @@ export function AiModePageClient({
           <MovieList
             key={hasAiData && activeAction === 'comming-soon' ? 'ai' : 'default'}
             initialNowShowing={initialNowShowing}
-            initialComingSoon={
-              hasAiData && activeAction === 'comming-soon' ? aiItems : initialComingSoon
-            }
+            initialComingSoon={hasAiComingSoonData ? aiItems : initialComingSoon}
             initialMovieTypes={initialMovieTypes}
-            disableFetch={hasAiData && activeAction === 'comming-soon'}
+            initialComingSoonMeta={hasAiComingSoonData ? aiMeta : undefined}
+            disableFetch={hasAiComingSoonData}
           />
         );
       case 'showtime':
         return (
           <ShowTimeList
             key={hasAiData && activeAction === 'showtime' ? 'ai' : 'default'}
-            initialShowTimes={hasAiData && activeAction === 'showtime' ? aiItems : initialShowTimes}
+            initialShowTimes={hasAiShowTimeData ? aiItems : initialShowTimes}
+            initialMeta={hasAiShowTimeData ? aiMeta : undefined}
             movieId={movieId || undefined}
-            disableFetch={hasAiData && activeAction === 'showtime'}
+            disableFetch={hasAiShowTimeData}
           />
         );
       case 'showtime-seat':
@@ -155,6 +171,7 @@ export function AiModePageClient({
             initialTicketPrices={
               hasAiData && activeAction === 'ticket-prices' ? aiItems : initialTicketPrices
             }
+            initialMeta={hasAiData && activeAction === 'ticket-prices' ? aiMeta : undefined}
             formats={formats}
             seatTypes={seatTypes}
             disableFetch={hasAiData && activeAction === 'ticket-prices'}
@@ -165,6 +182,7 @@ export function AiModePageClient({
           <EventList
             key={hasAiData && activeAction === 'event' ? 'ai' : 'default'}
             initialEvents={hasAiData && activeAction === 'event' ? aiItems : initialEvents}
+            initialMeta={hasAiData && activeAction === 'event' ? aiMeta : undefined}
             disableFetch={hasAiData && activeAction === 'event'}
           />
         );
@@ -173,6 +191,7 @@ export function AiModePageClient({
           <ComboList
             key={hasAiData && activeAction === 'combo' ? 'ai' : 'default'}
             initialCombos={hasAiData && activeAction === 'combo' ? aiItems : initialCombos}
+            initialMeta={hasAiData && activeAction === 'combo' ? aiMeta : undefined}
             disableFetch={hasAiData && activeAction === 'combo'}
           />
         );
@@ -181,6 +200,7 @@ export function AiModePageClient({
           <MenuItemList
             key={hasAiData && activeAction === 'menuItem' ? 'ai' : 'default'}
             initialMenuItems={hasAiData && activeAction === 'menuItem' ? aiItems : initialMenuItems}
+            initialMeta={hasAiData && activeAction === 'menuItem' ? aiMeta : undefined}
             disableFetch={hasAiData && activeAction === 'menuItem'}
           />
         );

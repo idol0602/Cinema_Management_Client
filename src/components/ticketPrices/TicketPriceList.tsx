@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import type { TicketPriceType } from '@/types/ticketPrice.type';
 import type { FormatType } from '@/types/format.type';
 import type { SeatTypeDetailType } from '@/types/seatTypeDetail.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface TicketPriceListProps {
   initialTicketPrices?: TicketPriceType[];
+  initialMeta?: PaginationMeta;
   formats: FormatType[];
   seatTypes: SeatTypeDetailType[];
   disableFetch?: boolean;
@@ -35,6 +37,7 @@ interface TicketPriceListProps {
 
 export function TicketPriceList({
   initialTicketPrices = [],
+  initialMeta,
   formats,
   seatTypes,
   disableFetch,
@@ -93,7 +96,7 @@ export function TicketPriceList({
     useAiDataOnly && initialTicketPrices
       ? ({
           data: initialTicketPrices,
-          meta: {
+          meta: initialMeta || {
             totalItems: initialTicketPrices.length,
             currentPage: 1,
             totalPages: 1,
@@ -121,7 +124,15 @@ export function TicketPriceList({
 
   useEffect(() => {
     setPage(1);
-  }, [dayTypeColumn, seatTypeIdColumn, formatIdColumn, sortColumn, orderColumn, searchColumn, searchQuery]);
+  }, [
+    dayTypeColumn,
+    seatTypeIdColumn,
+    formatIdColumn,
+    sortColumn,
+    orderColumn,
+    searchColumn,
+    searchQuery,
+  ]);
 
   const handleClearFilter = (filterType: string) => {
     if (filterType === 'dayType') setDayTypeColumn('');
@@ -140,7 +151,7 @@ export function TicketPriceList({
   return (
     <div>
       {/* Filters */}
-      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           {/* Search Input */}
           <div className="relative md:col-span-2">
@@ -354,7 +365,7 @@ export function TicketPriceList({
                 {meta.totalItems} giá vé
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"

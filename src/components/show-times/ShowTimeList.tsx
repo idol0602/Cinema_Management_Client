@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useShowTimes } from '@/hooks/useShowTimes';
 import { useRooms } from '@/hooks/useRooms';
 import { showTimePaginateConfig } from '@/config/paginate/show_time.config';
@@ -28,15 +28,22 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import type { ShowTimeType } from '@/types/showTime.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import Link from 'next/link';
 
 interface ShowTimeListProps {
   initialShowTimes?: ShowTimeType[];
+  initialMeta?: PaginationMeta;
   movieId?: string;
   disableFetch?: boolean;
 }
 
-export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: ShowTimeListProps) {
+export function ShowTimeList({
+  initialShowTimes = [],
+  initialMeta,
+  movieId,
+  disableFetch,
+}: ShowTimeListProps) {
   const [page, setPage] = useState(1);
   const [sortColumn, setSortColumn] = useState('');
   const [orderColumn, setOrderColumn] = useState('');
@@ -44,6 +51,7 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
   const [roomFilter, setRoomFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const defaultStartTimeIso = useMemo(() => new Date().toISOString(), []);
 
   const useAiDataOnly =
     !!disableFetch &&
@@ -70,20 +78,19 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
     if (roomFilter) {
       filter.room_id = roomFilter;
     }
-    // Default: only show showtimes from today onwards
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     if (startDate) {
       filter.start_time = filter.start_time || {};
       filter.start_time.$gte = `${startDate}T00:00:00Z`;
     } else {
       filter.start_time = filter.start_time || {};
-      filter.start_time.$gte = today.toISOString();
+      filter.start_time.$gte = defaultStartTimeIso;
     }
     if (endDate) {
       filter.end_time = filter.end_time || {};
       filter.end_time.$lte = `${endDate}T23:59:00Z`;
     }
+
+    console.log('Built filter:', filter);
     return filter;
   };
 
@@ -94,9 +101,7 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
     } else if (sortColumn) {
       return `${sortColumn}:DESC`;
     }
-    return (
-      showTimePaginateConfig.defaultSortBy[0][0] + ':' + showTimePaginateConfig.defaultSortBy[0][1]
-    );
+    return 'start_time:ASC';
   };
 
   const { data: _response, isLoading } = useShowTimes({
@@ -105,7 +110,7 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
     sortBy: buildSortBy(),
     filter: buildFilter(),
     initialData:
-      page === 1 && !dayTypeFilter && !roomFilter && !startDate && !endDate
+      page === 1 && !movieId && !dayTypeFilter && !roomFilter && !startDate && !endDate
         ? initialShowTimes
         : undefined,
     enabled: !useAiDataOnly,
@@ -115,7 +120,7 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
     useAiDataOnly && initialShowTimes
       ? ({
           data: initialShowTimes,
-          meta: {
+          meta: initialMeta || {
             totalItems: initialShowTimes.length,
             currentPage: 1,
             totalPages: 1,
@@ -124,13 +129,13 @@ export function ShowTimeList({ initialShowTimes = [], movieId, disableFetch }: S
         } as any)
       : _response;
 
-  const showTimes = response?.data || [];
+  const showTimes: ShowTimeType[] = (response?.data || []) as ShowTimeType[];
   const meta = response?.meta;
 
   // Auto-search when filters change
   useEffect(() => {
     setPage(1);
-  }, [sortColumn, orderColumn, dayTypeFilter, roomFilter, startDate, endDate]);
+  }, [movieId, sortColumn, orderColumn, dayTypeFilter, roomFilter, startDate, endDate]);
 
   const handleClearFilter = (filterType: string) => {
     if (filterType === 'sort') {

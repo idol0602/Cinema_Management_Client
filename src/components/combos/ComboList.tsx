@@ -8,6 +8,7 @@ import { ComboDetailDialog } from './ComboDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ComboType } from '@/types/combo.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import {
   Select,
   SelectContent,
@@ -20,10 +21,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface ComboListProps {
   initialCombos?: ComboType[];
+  initialMeta?: PaginationMeta;
   disableFetch?: boolean;
 }
 
-export function ComboList({ initialCombos = [], disableFetch }: ComboListProps) {
+export function ComboList({ initialCombos = [], initialMeta, disableFetch }: ComboListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchColumn, setSearchColumn] = useState('');
@@ -75,7 +77,7 @@ export function ComboList({ initialCombos = [], disableFetch }: ComboListProps) 
     useAiDataOnly && initialCombos
       ? ({
           data: initialCombos,
-          meta: {
+          meta: initialMeta || {
             totalItems: initialCombos.length,
             currentPage: 1,
             totalPages: 1,

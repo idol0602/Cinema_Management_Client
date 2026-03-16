@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +26,6 @@ import {
   User,
   Loader2,
   MessageSquareText,
-
   Headset,
   ImagePlus,
   CheckCheck,
@@ -251,7 +252,7 @@ export function ChatPopup() {
 
     try {
       const response = await chatWithBot({
-        sessionId,
+        user_id: user?.id ?? sessionId,
         message: trimmed,
       });
 
@@ -614,7 +615,29 @@ export function ChatPopup() {
                               : 'rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                           )}
                         >
-                          {msg.content}
+                          {msg.role === 'assistant' ? (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => (
+                                  <p className="whitespace-pre-wrap">{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="list-disc space-y-1 pl-5">{children}</ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="list-decimal space-y-1 pl-5">{children}</ol>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold">{children}</strong>
+                                ),
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                          ) : (
+                            msg.content
+                          )}
                         </div>
                         {msg.role === 'user' && (
                           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
@@ -754,14 +777,14 @@ export function ChatPopup() {
               ) : (
                 <>
                   {/* Connecting indicator */}
-                  {/* {isConnecting && (
+                  {isConnecting && (
                     <div className="flex items-center gap-2 border-b border-orange-200 bg-orange-50 px-4 py-2 dark:border-orange-900 dark:bg-orange-950/30">
                       <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
                       <span className="text-xs text-orange-600 dark:text-orange-400">
                         Đang chờ nhân viên kết nối...
                       </span>
                     </div>
-                  )} */}
+                  )}
 
                   {/* Staff Messages */}
                   <ScrollArea className="flex-1 p-4">
@@ -922,8 +945,6 @@ export function ChatPopup() {
               )}
             </>
           )}
-
-
         </div>
       </div>
 

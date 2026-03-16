@@ -8,6 +8,7 @@ import { Bot, Send, Sparkles, User, XCircle, Loader2 } from 'lucide-react';
 import { aiBookingService } from '@/services/ai_booking.service';
 import { showTimeService } from '@/services/showTime.service';
 import { showTimeSeatService } from '@/services/showTimeSeat.service';
+import { eventService } from '@/services/event.service';
 import { useAiBookingStore } from '@/store/useAiBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
@@ -87,15 +88,19 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     setMovieId,
     setShowTimeId,
     setShowTimeSeatIds,
+    setComboIds,
+    setMenuItems,
+    setEventId,
     setPaymentMethod,
     setCurrentStep,
     setActiveAction,
     setChatData,
+    setChatMeta,
     setIsAiLoading,
     resetAll,
   } = useAiBookingStore();
 
-  const syncStateFromBackend = async () => {
+  const syncStateFromBackend = async (options?: { preserveActiveAction?: boolean }) => {
     if (!user?.id) return;
     const state = await aiBookingService.getAiBookingState(user.id);
     if (!state) return;
@@ -103,12 +108,25 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     setMovieId(state.movieId || null);
     setShowTimeId(state.showTimeId || null);
     setShowTimeSeatIds(Array.isArray(state.showTimeSeatIds) ? state.showTimeSeatIds : []);
+    setComboIds(Array.isArray(state.comboIds) ? state.comboIds : []);
+    setMenuItems(
+      Array.isArray(state.menuItems)
+        ? state.menuItems
+            .filter((item) => item?.id || item?.menuItemId)
+            .map((item) => ({
+              id: (item.id || item.menuItemId) as string,
+              quantity: Number(item?.quantity || 0),
+            }))
+            .filter((item) => item.quantity > 0)
+        : []
+    );
+    setEventId(state.eventId || null);
     setPaymentMethod(state.paymentMethod || '');
 
     if (state.step && STEP_MAP[state.step] !== undefined) {
       const nextStep = STEP_MAP[state.step];
       setCurrentStep(nextStep);
-      if (STEP_TO_ACTION[nextStep]) {
+      if (!options?.preserveActiveAction && STEP_TO_ACTION[nextStep]) {
         setActiveAction(STEP_TO_ACTION[nextStep]);
       }
     }
@@ -139,19 +157,24 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     try {
       const responses = await aiBookingService.chatWithAgent(message, user?.id);
 
+      let hasExplicitAction = false;
+
       if (responses && responses.length > 0) {
         for (const resp of responses) {
           // Update step if present
           if (resp.step && STEP_MAP[resp.step] !== undefined) {
             const nextStep = STEP_MAP[resp.step];
             setCurrentStep(nextStep);
-            if (STEP_TO_ACTION[nextStep]) {
+            // Only set action from step mapping if no explicit action in response
+            if (!resp.action && STEP_TO_ACTION[nextStep]) {
               setActiveAction(STEP_TO_ACTION[nextStep]);
             }
           }
 
           // Update action — only change if not null/"other"
+          // This takes precedence over step-derived action
           if (resp.action && resp.action !== 'other') {
+            hasExplicitAction = true;
             setActiveAction(resp.action);
           }
 
@@ -162,6 +185,7 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
             const raw = resp.data;
             const items = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
             setChatData(items);
+            setChatMeta(raw?.meta ?? null);
 
             // If moving to showtime step but movieId hasn't been set yet, infer from payload.
             if ((!movieId || movieId === '') && Array.isArray(items) && items.length > 0) {
@@ -187,7 +211,7 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
         }
       }
 
-      await syncStateFromBackend();
+      await syncStateFromBackend({ preserveActiveAction: hasExplicitAction });
     } catch (error: any) {
       toast.error('Lỗi kết nối AI');
       setMessages((prev) => [
@@ -233,11 +257,12 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
                 ? (response.data as any).data
                 : [];
             setChatData(items);
+            setChatMeta((response.data as any)?.meta ?? null);
           }
         })
         .finally(() => setIsAiLoading(false));
     }
-  }, [currentStep, movieId, setActiveAction, setChatData, setIsAiLoading]);
+  }, [currentStep, movieId, setActiveAction, setChatData, setChatMeta, setIsAiLoading]);
 
   useEffect(() => {
     if (currentStep === 2 && showTimeId && announcedSeatStepRef.current !== showTimeId) {
@@ -261,6 +286,7 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
                 ? (response.data as any).data
                 : [];
             setChatData(items);
+            setChatMeta((response.data as any)?.meta ?? null);
             setMessages((prev) => [
               ...prev,
               {
@@ -274,7 +300,7 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
         })
         .finally(() => setIsAiLoading(false));
     }
-  }, [currentStep, showTimeId, setActiveAction, setChatData, setIsAiLoading]);
+  }, [currentStep, showTimeId, setActiveAction, setChatData, setChatMeta, setIsAiLoading]);
 
   useEffect(() => {
     if (currentStep === 3 && !announcedAddonStepRef.current) {
@@ -346,7 +372,7 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
               id: sourceMenu.id,
               name: sourceMenu.name,
               description: sourceMenu.description,
-              item_type: sourceMenu.type,
+              item_type: sourceMenu.item_type,
               image: sourceMenu.image,
             }
           : menuItem.item,
@@ -409,6 +435,45 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     };
   };
 
+  /**
+   * Enrich event data with full details from API
+   */
+  const enrichEvent = async (
+    details: AiBookingStateDetails,
+    rawState?: any
+  ): Promise<AiBookingStateDetails> => {
+    // Use event from details or rawState
+    const eventId = details.event?.id || rawState?.eventId;
+
+    if (!eventId) {
+      return details;
+    }
+
+    // If event already has full details, return as-is
+    if (details.event && details.event.name) {
+      return details;
+    }
+
+    // Fetch full event details from API
+    try {
+      const response = await eventService.getById(eventId);
+      if (response.success && response.data) {
+        const eventData = response.data as any;
+        return {
+          ...details,
+          event: {
+            id: eventData.id,
+            name: eventData.name,
+          },
+        };
+      }
+    } catch (error) {
+      console.error('Failed to enrich event:', error);
+    }
+
+    return details;
+  };
+
   const handleViewBookingStatus = async () => {
     if (!user?.id) {
       toast.error('Vui lòng đăng nhập');
@@ -423,9 +488,10 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
       return;
     }
 
-    // Enrich menu_items and combos with full data, passing raw state if available
+    // Enrich menu_items, combos, and event with full data, passing raw state if available
     details = enrichMenuItems(details, rawState);
     details = enrichCombos(details, rawState);
+    details = await enrichEvent(details, rawState);
 
     setStatusDetails({
       ...details,

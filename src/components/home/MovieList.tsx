@@ -13,6 +13,7 @@ import { MultiCombobox } from '@/components/ui/multi-combobox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MovieType } from '@/types/movie.type';
 import type { MovieTypeType } from '@/types/movieType.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 import {
   Select,
   SelectContent,
@@ -32,7 +33,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieListProps {
   initialNowShowing?: MovieType[];
+  initialNowShowingMeta?: PaginationMeta;
   initialComingSoon?: MovieType[];
+  initialComingSoonMeta?: PaginationMeta;
   initialMovieTypes?: MovieTypeType[];
   disableFetch?: boolean;
 }
@@ -300,7 +303,9 @@ function MovieTabContent({
 
 export function MovieList({
   initialNowShowing = [],
+  initialNowShowingMeta,
   initialComingSoon = [],
+  initialComingSoonMeta,
   initialMovieTypes = [],
   disableFetch,
 }: MovieListProps) {
@@ -387,7 +392,7 @@ export function MovieList({
     useAiNowShowingOnly && initialNowShowing
       ? ({
           data: initialNowShowing,
-          meta: {
+          meta: initialNowShowingMeta || {
             totalItems: initialNowShowing.length,
             currentPage: 1,
             totalPages: 1,
@@ -400,7 +405,7 @@ export function MovieList({
     useAiComingSoonOnly && initialComingSoon
       ? ({
           data: initialComingSoon,
-          meta: {
+          meta: initialComingSoonMeta || {
             totalItems: initialComingSoon.length,
             currentPage: 1,
             totalPages: 1,

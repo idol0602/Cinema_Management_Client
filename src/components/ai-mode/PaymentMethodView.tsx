@@ -24,7 +24,7 @@ export function PaymentMethodView({
   initialMenuItems = [],
   initialCombos = [],
 }: PaymentMethodViewProps) {
-  const { paymentMethod, setPaymentMethod } = useAiBookingStore();
+  const { paymentMethod, setPaymentMethod, createOrder } = useAiBookingStore();
   const { user } = useAuthStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<AiBookingStateDetails | null>(null);
@@ -71,7 +71,7 @@ export function PaymentMethodView({
               id: sourceMenu.id,
               name: sourceMenu.name,
               description: sourceMenu.description,
-              item_type: sourceMenu.type,
+              item_type: sourceMenu.item_type,
               image: sourceMenu.image,
             }
           : menuItem.item,
@@ -247,7 +247,7 @@ export function PaymentMethodView({
           onClick={handleOpenConfirmation}
           className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
         >
-          Xac nhan va xem thong tin dat ve
+          Xác nhận và xem thông tin đặt vé
         </Button>
       </div>
 
@@ -255,7 +255,12 @@ export function PaymentMethodView({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         bookingDetails={bookingDetails}
-        onConfirm={() => setDialogOpen(false)}
+        onConfirm={async () => {
+          const createdOrder = await createOrder();
+          if (createdOrder) {
+            setDialogOpen(false);
+          }
+        }}
         showConfirmButton={canConfirm}
       />
     </>

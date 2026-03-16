@@ -54,27 +54,27 @@ export default function BookingConfirmationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-500" />
-            Xac nhan dat ve
+            Xác nhận thông tin đặt vé
           </DialogTitle>
-          <DialogDescription>Kiem tra lai thong tin truoc khi thanh toan</DialogDescription>
+          <DialogDescription> Kiểm tra lại thông tin trước khi thanh toán </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
             <img
               src={movie?.thumbnail || '/placeholder.png'}
-              alt={movie?.title || 'Movie'}
+              alt={movie?.title || ''}
               className="h-24 w-16 rounded-md object-cover shadow"
             />
             <div>
-              <p className="text-lg font-bold">{movie?.title || 'N/A'}</p>
+              <p className="text-lg font-bold">{movie?.title || 'Chưa chọn phim'}</p>
               <p className="text-sm text-gray-500">
-                {showTime?.room?.name || 'N/A'} • {formatShowTime(showTime?.start_time)}
+                {showTime?.room?.name || ''} • {formatShowTime(showTime?.start_time)}
               </p>
               <div className="mt-1 flex gap-2">
-                <Badge>{showTime?.room?.format?.name || '2D'}</Badge>
+                <Badge>{showTime?.room?.format?.name || 'Chưa chọn'}</Badge>
                 <Badge variant="outline">
-                  {showTime?.day_type === 'WEEKEND' ? 'Cuoi tuan' : 'Ngay thuong'}
+                  {showTime?.day_type === 'WEEKEND' ? 'Cuối tuần' : 'Ngày thường'}
                 </Badge>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function BookingConfirmationDialog({
           <div className="space-y-2">
             <p className="flex items-center gap-2 text-sm font-semibold">
               <Ticket className="h-4 w-4" />
-              Ghe da chon ({seats.length}):
+              Ghế đã chọn ({seats.length}):
             </p>
             <div className="max-h-32 space-y-1 overflow-y-auto">
               {seats.map((seat) => {
@@ -146,7 +146,7 @@ export default function BookingConfirmationDialog({
             <div className="space-y-2">
               <p className="flex items-center gap-2 text-sm font-semibold">
                 <Gift className="h-4 w-4" />
-                Mon le ({menuItems.length}):
+                Món lẻ ({menuItems.length}):
               </p>
               <div className="space-y-1">
                 {menuItems.map((menuItem) => (
@@ -168,7 +168,7 @@ export default function BookingConfirmationDialog({
             <div className="flex items-center justify-between rounded-lg bg-purple-50 p-2 dark:bg-purple-950/30">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-purple-600" />
-                <span className="text-sm">Su kien: {event.name}</span>
+                <span className="text-sm">Sự kiện: {event.name}</span>
               </div>
               {discount?.is_active && (
                 <Badge className="bg-green-500">-{discount.discount_percent || 0}%</Badge>
@@ -180,21 +180,21 @@ export default function BookingConfirmationDialog({
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Tam tinh:</span>
+              <span>Tạm tính:</span>
               <span>{formatPrice(breakdown?.subtotal || 0)}</span>
             </div>
             {(breakdown?.discount_amount || 0) > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Giam gia ({breakdown?.discount_percent || 0}%):</span>
+                <span>Giảm giá ({breakdown?.discount_percent || 0}%):</span>
                 <span>-{formatPrice(breakdown?.discount_amount || 0)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm text-orange-600">
-              <span>Phi dich vu ({breakdown?.service_vat_percent || 0}%):</span>
+              <span>Phí dịch vụ ({breakdown?.service_vat_percent || 0}%):</span>
               <span>{formatPrice(breakdown?.service_vat || 0)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
-              <span className="text-lg font-bold">Tong tien:</span>
+              <span className="text-lg font-bold">Tổng tiền:</span>
               <span className="text-2xl font-bold text-orange-600">
                 {formatPrice(breakdown?.total || 0)}
               </span>
@@ -204,7 +204,7 @@ export default function BookingConfirmationDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Huy
+            Hủy
           </Button>
           {showConfirmButton && (
             <Button
@@ -212,7 +212,7 @@ export default function BookingConfirmationDialog({
               className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
-              Xac nhan thanh toan
+              Xác nhận thanh toán
             </Button>
           )}
         </DialogFooter>
