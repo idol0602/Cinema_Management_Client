@@ -1,18 +1,18 @@
-import { movieService } from "../services/movie.service"
-import type { MovieType } from "../types/movie.type"
-import type { PaginationQuery, PaginatedResponse } from "../types/pagination.type"
+import { movieService } from "../../services/movie.service"
+import type { MovieType } from "../../types/movie.type"
+import type { PaginationQuery, PaginatedResponse } from "../../types/pagination.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { defaultOption } from "../option"
 
-interface UseComingSoonMoviesOptions extends PaginationQuery {
+interface UseAiComingSoonMoviesOptions extends PaginationQuery {
   initialData?: MovieType[]
 }
 
-export const useComingSoonMovies = (options: UseComingSoonMoviesOptions) => {
+export const useAiComingSoonMovies = (options: UseAiComingSoonMoviesOptions) => {
   const { page, limit, sortBy, search, searchBy, filter, initialData } = options
 
   return useQuery<PaginatedResponse<MovieType>>({
-    queryKey: ["comingSoonMovies", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
+    queryKey: ["aiComingSoonMovies", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
     queryFn: async () => {
       return await movieService.findComingSoon({ page, limit, sortBy, search, searchBy, filter })
     },

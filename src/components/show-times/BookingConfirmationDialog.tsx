@@ -26,10 +26,17 @@ const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
 };
 
-const formatShowTime = (dateTime?: string) => {
-  if (!dateTime) return '';
+const formatShowDateTime = (dateTime?: string) => {
+  if (!dateTime) return 'Chưa có thông tin';
   const date = new Date(dateTime);
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  return new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 };
 
 export default function BookingConfirmationDialog({
@@ -69,7 +76,10 @@ export default function BookingConfirmationDialog({
             <div>
               <p className="text-lg font-bold">{movie?.title || 'Chưa chọn phim'}</p>
               <p className="text-sm text-gray-500">
-                {showTime?.room?.name || ''} • {formatShowTime(showTime?.start_time)}
+                {showTime?.room?.name || 'Chưa có phòng chiếu'}
+              </p>
+              <p className="mt-1 text-xs font-medium text-orange-600 dark:text-orange-400">
+                Bắt đầu: {formatShowDateTime(showTime?.start_time)}
               </p>
               <div className="mt-1 flex gap-2">
                 <Badge>{showTime?.room?.format?.name || 'Chưa chọn'}</Badge>
@@ -165,9 +175,9 @@ export default function BookingConfirmationDialog({
           )}
 
           {event && (
-            <div className="flex items-center justify-between rounded-lg bg-purple-50 p-2 dark:bg-purple-950/30">
+            <div className="flex items-center justify-between rounded-lg bg-orange-50 p-2 dark:bg-orange-950/30">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-purple-600" />
+                <Calendar className="h-4 w-4 text-orange-600" />
                 <span className="text-sm">Sự kiện: {event.name}</span>
               </div>
               {discount?.is_active && (

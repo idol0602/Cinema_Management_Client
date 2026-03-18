@@ -203,6 +203,8 @@ export const useAiBookingStore = create<AiBookingState>()(
             return null
           }
 
+          toast.success('Đặt vé thành công!')
+
           window.location.href = paymentUrl
           return createdOrder
         } catch (error) {

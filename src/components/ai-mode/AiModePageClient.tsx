@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StepProgressBar } from './StepProgressBar';
 import { ChatPanel } from './ChatPanel';
-import { MovieList } from '@/components/home/MovieList';
-import { ShowTimeList } from '@/components/show-times/ShowTimeList';
-import { TicketPriceList } from '@/components/ticketPrices/TicketPriceList';
-import { EventList } from '@/components/events/EventList';
-import { ComboList } from '@/components/combos/ComboList';
-import { MenuItemList } from '@/components/menuItems/MenuItemList';
+import { AiMovieList } from './lists/AiMovieList';
+import { AiShowTimeList } from './lists/AiShowTimeList';
+import { AiTicketPriceList } from './lists/AiTicketPriceList';
+import { AiEventList } from './lists/AiEventList';
+import { AiComboList } from './lists/AiComboList';
+import { AiMenuItemList } from './lists/AiMenuItemList';
 import { SeatMapView } from './SeatMapView';
 import { PaymentMethodView } from './PaymentMethodView';
 import { AiLoadingOverlay } from './AiLoadingOverlay';
@@ -125,7 +125,7 @@ export function AiModePageClient({
     switch (contentView) {
       case 'now-showing':
         return (
-          <MovieList
+          <AiMovieList
             key={hasAiData && activeAction === 'now-showing' ? 'ai' : 'default'}
             initialNowShowing={hasAiNowShowingData ? aiItems : initialNowShowing}
             initialComingSoon={initialComingSoon}
@@ -136,7 +136,7 @@ export function AiModePageClient({
         );
       case 'comming-soon':
         return (
-          <MovieList
+          <AiMovieList
             key={hasAiData && activeAction === 'comming-soon' ? 'ai' : 'default'}
             initialNowShowing={initialNowShowing}
             initialComingSoon={hasAiComingSoonData ? aiItems : initialComingSoon}
@@ -147,7 +147,7 @@ export function AiModePageClient({
         );
       case 'showtime':
         return (
-          <ShowTimeList
+          <AiShowTimeList
             key={hasAiData && activeAction === 'showtime' ? 'ai' : 'default'}
             initialShowTimes={hasAiShowTimeData ? aiItems : initialShowTimes}
             initialMeta={hasAiShowTimeData ? aiMeta : undefined}
@@ -166,7 +166,7 @@ export function AiModePageClient({
         );
       case 'ticket-prices':
         return (
-          <TicketPriceList
+          <AiTicketPriceList
             key={hasAiData && activeAction === 'ticket-prices' ? 'ai' : 'default'}
             initialTicketPrices={
               hasAiData && activeAction === 'ticket-prices' ? aiItems : initialTicketPrices
@@ -179,7 +179,7 @@ export function AiModePageClient({
         );
       case 'event':
         return (
-          <EventList
+          <AiEventList
             key={hasAiData && activeAction === 'event' ? 'ai' : 'default'}
             initialEvents={hasAiData && activeAction === 'event' ? aiItems : initialEvents}
             initialMeta={hasAiData && activeAction === 'event' ? aiMeta : undefined}
@@ -188,7 +188,7 @@ export function AiModePageClient({
         );
       case 'combo':
         return (
-          <ComboList
+          <AiComboList
             key={hasAiData && activeAction === 'combo' ? 'ai' : 'default'}
             initialCombos={hasAiData && activeAction === 'combo' ? aiItems : initialCombos}
             initialMeta={hasAiData && activeAction === 'combo' ? aiMeta : undefined}
@@ -197,7 +197,7 @@ export function AiModePageClient({
         );
       case 'menuItem':
         return (
-          <MenuItemList
+          <AiMenuItemList
             key={hasAiData && activeAction === 'menuItem' ? 'ai' : 'default'}
             initialMenuItems={hasAiData && activeAction === 'menuItem' ? aiItems : initialMenuItems}
             initialMeta={hasAiData && activeAction === 'menuItem' ? aiMeta : undefined}
@@ -208,9 +208,9 @@ export function AiModePageClient({
       case 'addon':
         return (
           <div className="space-y-6">
-            <ComboList initialCombos={initialCombos} />
-            <MenuItemList initialMenuItems={initialMenuItems} />
-            <EventList initialEvents={initialEvents} />
+            <AiComboList initialCombos={initialCombos} />
+            <AiMenuItemList initialMenuItems={initialMenuItems} />
+            <AiEventList initialEvents={initialEvents} />
           </div>
         );
       // Payment step
@@ -220,7 +220,7 @@ export function AiModePageClient({
         );
       default:
         return (
-          <MovieList
+          <AiMovieList
             initialNowShowing={initialNowShowing}
             initialComingSoon={initialComingSoon}
             initialMovieTypes={initialMovieTypes}

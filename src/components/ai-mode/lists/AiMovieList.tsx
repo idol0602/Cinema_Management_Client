@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useNowShowingMovies } from '@/hooks/useNowShowingMovies';
-import { useComingSoonMovies } from '@/hooks/useComingSoonMovies';
+import { useAiNowShowingMovies } from '@/hooks/ai-mode/useAiNowShowingMovies';
+import { useAiComingSoonMovies } from '@/hooks/ai-mode/useAiComingSoonMovies';
 import { useMovieTypes } from '@/hooks/useMovieTypes';
 import { moviePaginateConfig } from '@/config/paginate/movie.config';
-import { MovieCard } from './MovieCard';
+import { MovieCard } from '@/components/home/MovieCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MultiCombobox } from '@/components/ui/multi-combobox';
@@ -296,7 +296,7 @@ function MovieTabContent({
   );
 }
 
-export function MovieList({
+export function AiMovieList({
   initialNowShowing = [],
   initialNowShowingMeta,
   initialComingSoon = [],
@@ -363,7 +363,7 @@ export function MovieList({
   const enableNowShowing = mode !== 'coming-soon';
   const enableComingSoon = mode !== 'now-showing';
 
-  const { data: _nsResponse, isLoading: nsLoading } = useNowShowingMovies({
+  const { data: _nsResponse, isLoading: nsLoading } = useAiNowShowingMovies({
     page: nsPage,
     limit: moviePaginateConfig.defaultLimit,
     search: nsSearch || undefined,
@@ -375,7 +375,7 @@ export function MovieList({
   });
 
   // Coming Soon hook
-  const { data: _csResponse, isLoading: csLoading } = useComingSoonMovies({
+  const { data: _csResponse, isLoading: csLoading } = useAiComingSoonMovies({
     page: csPage,
     limit: moviePaginateConfig.defaultLimit,
     search: csSearch || undefined,

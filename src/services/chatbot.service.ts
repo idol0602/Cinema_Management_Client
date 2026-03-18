@@ -44,7 +44,7 @@ function extractBotMessage(payload: unknown): string {
 }
 
 export const chatWithBot = async (payload: ChatBotPayload): Promise<ChatBotResponse> => {
-  const response = await api.post('/chatbot/chat', payload);
+  const response = await api.post('/chatbot/chat', payload, { timeout: 60000 });
   const normalizedData = extractBotMessage(response.data?.data);
 
   return {

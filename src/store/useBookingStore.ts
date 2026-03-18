@@ -733,8 +733,9 @@ export const useBookingStore = create<BookingStore>()(
         }
       },
 
-      createOrderWithAI: async () => {
+      createOrderWithAI: async (userId: string) => {
         try {
+          const state = get();
           // Get AI booking state
           const aiBookingStore = useAiBookingStore.getState();
           const { paymentMethod } = aiBookingStore;
@@ -780,8 +781,10 @@ export const useBookingStore = create<BookingStore>()(
           // 4. Close dialog and redirect
           set({ confirmDialogOpen: false });
           aiBookingStore.setIsAiLoading(false);
+          state.stopCountdown();
 
           toast.success('Đặt vé thành công!');
+          await aiBookingService.clearAiBookingState(userId);
           window.location.href = paymentUrl;
           return createdOrder;
         } catch (error) {

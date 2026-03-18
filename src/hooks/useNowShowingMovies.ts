@@ -6,18 +6,16 @@ import { defaultOption } from "./option"
 
 interface UseNowShowingMoviesOptions extends PaginationQuery {
   initialData?: MovieType[]
-  enabled?: boolean
 }
 
 export const useNowShowingMovies = (options: UseNowShowingMoviesOptions) => {
-  const { page, limit, sortBy, search, searchBy, filter, initialData, enabled } = options
+  const { page, limit, sortBy, search, searchBy, filter, initialData } = options
 
   return useQuery<PaginatedResponse<MovieType>>({
     queryKey: ["nowShowingMovies", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
     queryFn: async () => {
       return await movieService.findNowShowing({ page, limit, sortBy, search, searchBy, filter })
     },
-    enabled: enabled !== false,
     initialData: initialData
       ? {
           data: initialData,
