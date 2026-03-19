@@ -5,7 +5,6 @@ import { useAiTicketPrices } from '@/hooks/ai-mode/useAiTicketPrices';
 import { ticketPricePaginateConfig } from '@/config/paginate/ticket_price.config';
 import { TicketPriceCard } from '@/components/ticketPrices/TicketPriceCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import type { TicketPriceType } from '@/types/ticketPrice.type';
 import type { FormatType } from '@/types/format.type';
 import type { SeatTypeDetailType } from '@/types/seatTypeDetail.type';
@@ -17,14 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Search,
-  Filter,
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-} from 'lucide-react';
+import { Filter, SlidersHorizontal, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TicketPriceListProps {
@@ -120,10 +112,6 @@ export function AiTicketPriceList({
   const getSeatTypeName = (seatTypeId: string) => {
     const seatType = seatTypes.find((s) => s.id === seatTypeId);
     return seatType ? seatType.name : seatTypeId;
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') setPage(1);
   };
 
   useEffect(() => {
@@ -353,7 +341,7 @@ export function AiTicketPriceList({
       ) : ticketPrices && ticketPrices.length > 0 ? (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {ticketPrices.map((item) => (
+            {ticketPrices.map((item: TicketPriceType) => (
               <TicketPriceCard
                 key={item.id}
                 item={item}

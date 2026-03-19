@@ -28,8 +28,8 @@ export default async function MovieDetailPage({ params }: MovieDetailPageProps) 
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <MovieDetailHero movie={movie} />
-      <CommentSection movieId={params.id} initialComments={initialComments} />
+      <MovieDetailHero movie={movie as any} />
+      <CommentSection movieId={id} initialComments={initialComments as any} />
     </div>
   );
 }

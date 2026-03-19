@@ -28,6 +28,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import type { ShowTimeType } from '@/types/showTime.type';
+import type { PaginationMeta } from '@/types/pagination.type';
 
 import Link from 'next/link';
 

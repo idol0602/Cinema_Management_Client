@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import type { ShowTimeType } from '@/types/showTime.type';
 import type { PaginationMeta } from '@/types/pagination.type';
+import type { RoomType } from '@/types/room.type';
 import Link from 'next/link';
 
 interface ShowTimeListProps {
@@ -211,7 +212,7 @@ export function AiShowTimeList({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả phòng</SelectItem>
-                {rooms?.map((room) => (
+                {rooms?.map((room: RoomType) => (
                   <SelectItem key={room.id} value={room.id || ''}>
                     {room.name}
                   </SelectItem>

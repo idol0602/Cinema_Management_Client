@@ -329,7 +329,7 @@ export function AiEventList({ initialEvents = [], initialMeta, disableFetch }: E
         ) : events && events.length > 0 ? (
           <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {events.map((event) => (
+              {events.map((event: EventType) => (
                 <EventCard key={event.id} event={event} onViewDetail={handleViewDetail} />
               ))}
             </div>

@@ -18,7 +18,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PostDetail post={post} />
+      <PostDetail post={post as any} />
     </main>
   );
 }

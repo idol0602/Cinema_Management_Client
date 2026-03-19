@@ -5,7 +5,6 @@ import { useTicketPrices } from '@/hooks/useTicketPrices';
 import { ticketPricePaginateConfig } from '@/config/paginate/ticket_price.config';
 import { TicketPriceCard } from './TicketPriceCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import type { TicketPriceType } from '@/types/ticketPrice.type';
 import type { FormatType } from '@/types/format.type';
 import type { SeatTypeDetailType } from '@/types/seatTypeDetail.type';

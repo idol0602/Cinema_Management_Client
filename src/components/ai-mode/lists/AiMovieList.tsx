@@ -360,9 +360,6 @@ export function AiMovieList({
     !csOrder &&
     csMovieTypeColumns.length === 0;
 
-  const enableNowShowing = mode !== 'coming-soon';
-  const enableComingSoon = mode !== 'now-showing';
-
   const { data: _nsResponse, isLoading: nsLoading } = useAiNowShowingMovies({
     page: nsPage,
     limit: moviePaginateConfig.defaultLimit,
