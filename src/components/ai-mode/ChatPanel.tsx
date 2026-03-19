@@ -100,7 +100,10 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     resetAll,
   } = useAiBookingStore();
 
-  const syncStateFromBackend = async (options?: { preserveActiveAction?: boolean }) => {
+  const syncStateFromBackend = async (options?: {
+    preserveActiveAction?: boolean;
+    preserveStep?: boolean;
+  }) => {
     if (!user?.id) return;
     const state = await aiBookingService.getAiBookingState(user.id);
     if (!state) return;
@@ -123,7 +126,8 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
     setEventId(state.eventId || null);
     setPaymentMethod(state.paymentMethod || '');
 
-    if (state.step && STEP_MAP[state.step] !== undefined) {
+    // Only sync step from backend if we're not preserving a step that was just set from AI response
+    if (!options?.preserveStep && state.step && STEP_MAP[state.step] !== undefined) {
       const nextStep = STEP_MAP[state.step];
       setCurrentStep(nextStep);
       if (!options?.preserveActiveAction && STEP_TO_ACTION[nextStep]) {
@@ -158,11 +162,15 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
       const responses = await aiBookingService.chatWithAgent(message, user?.id);
 
       let hasExplicitAction = false;
+      let hasStepUpdate = false;
+      let lastResponsiveStep: string | null = null;
 
       if (responses && responses.length > 0) {
         for (const resp of responses) {
           // Update step if present
           if (resp.step && STEP_MAP[resp.step] !== undefined) {
+            hasStepUpdate = true;
+            lastResponsiveStep = resp.step;
             const nextStep = STEP_MAP[resp.step];
             setCurrentStep(nextStep);
             // Only set action from step mapping if no explicit action in response
@@ -211,7 +219,16 @@ export function ChatPanel({ initialMenuItems = [], initialCombos = [] }: ChatPan
         }
       }
 
-      await syncStateFromBackend({ preserveActiveAction: hasExplicitAction });
+      // If step was updated from response, save it to backend immediately to ensure consistency
+      if (hasStepUpdate && lastResponsiveStep && user?.id) {
+        await aiBookingService.saveAiBookingState(user.id, { step: lastResponsiveStep });
+      }
+
+      // Sync from backend but preserve the step if it was updated in this response
+      await syncStateFromBackend({
+        preserveActiveAction: hasExplicitAction,
+        preserveStep: hasStepUpdate,
+      });
     } catch (error: any) {
       toast.error('Lỗi kết nối AI');
       setMessages((prev) => [
