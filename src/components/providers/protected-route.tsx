@@ -41,9 +41,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
           <p className="text-gray-600">Đang kiểm tra xác thực...</p>
         </div>
       </div>
