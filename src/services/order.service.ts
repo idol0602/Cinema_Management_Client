@@ -158,9 +158,7 @@ export const orderService = {
 
   getOrderHistory: async(query: PaginationQuery): Promise<PaginatedResponse<OrderType>> => {
     try {
-      console.log("Fetching order history with query:", query);
       const response = await api.get('/orders/history', { params: query });
-      console.log(response)
       return {
             data: response.data.data,
             success: true,

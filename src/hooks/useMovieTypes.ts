@@ -1,7 +1,7 @@
 import { movieTypeService } from "@/services/movieType.service"
 import type { MovieTypeType } from "@/types/movieType.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { coldOption } from "./option"
 
 interface UseMovieTypesOptions {
   initialData?: MovieTypeType[]
@@ -15,6 +15,6 @@ export const useMovieTypes = (options: UseMovieTypesOptions = {}) => {
       return response.data as MovieTypeType[]
     },
     initialData: options.initialData,
-    ...defaultOption,
+    ...coldOption,
   })
 }

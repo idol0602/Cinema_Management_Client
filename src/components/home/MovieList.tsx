@@ -25,9 +25,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieListProps {
   initialNowShowing?: MovieType[];
-  initialNowShowingMeta?: PaginationMeta;
+  metaNowShowing?: PaginationMeta;
   initialComingSoon?: MovieType[];
-  initialComingSoonMeta?: PaginationMeta;
+  metaComingSoon?: PaginationMeta;
   initialMovieTypes?: MovieTypeType[];
   disableFetch?: boolean;
   mode?: 'all' | 'now-showing' | 'coming-soon';
@@ -298,9 +298,25 @@ function MovieTabContent({
 
 export function MovieList({
   initialNowShowing = [],
-  initialNowShowingMeta,
+  metaNowShowing = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+    sortBy: [],
+    filter: {},
+    searchBy: '',
+  },
   initialComingSoon = [],
-  initialComingSoonMeta,
+  metaComingSoon = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+    sortBy: [],
+    filter: {},
+    searchBy: '',
+  },
   initialMovieTypes = [],
   disableFetch,
   mode = 'all',
@@ -388,7 +404,7 @@ export function MovieList({
 
   const nsFallbackResponse = {
     data: initialNowShowing,
-    meta: initialNowShowingMeta || {
+    meta: metaNowShowing || {
       totalItems: initialNowShowing.length,
       currentPage: 1,
       totalPages: 1,
@@ -398,7 +414,7 @@ export function MovieList({
 
   const csFallbackResponse = {
     data: initialComingSoon,
-    meta: initialComingSoonMeta || {
+    meta: metaComingSoon || {
       totalItems: initialComingSoon.length,
       currentPage: 1,
       totalPages: 1,
@@ -410,7 +426,7 @@ export function MovieList({
     useAiNowShowingOnly && initialNowShowing
       ? ({
           data: initialNowShowing,
-          meta: initialNowShowingMeta || {
+          meta: metaNowShowing || {
             totalItems: initialNowShowing.length,
             currentPage: 1,
             totalPages: 1,
@@ -423,7 +439,7 @@ export function MovieList({
     useAiComingSoonOnly && initialComingSoon
       ? ({
           data: initialComingSoon,
-          meta: initialComingSoonMeta || {
+          meta: metaComingSoon || {
             totalItems: initialComingSoon.length,
             currentPage: 1,
             totalPages: 1,

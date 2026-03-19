@@ -21,11 +21,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface ComboListProps {
   initialCombos?: ComboType[];
-  initialMeta?: PaginationMeta;
-  disableFetch?: boolean;
+  metaCombos?: PaginationMeta;
 }
 
-export function ComboList({ initialCombos = [], initialMeta, disableFetch }: ComboListProps) {
+export function ComboList({
+  initialCombos = [],
+  metaCombos = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+  },
+}: ComboListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchColumn, setSearchColumn] = useState('');
@@ -37,16 +44,6 @@ export function ComboList({ initialCombos = [], initialMeta, disableFetch }: Com
   // Detail dialog state
   const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
-  const useAiDataOnly =
-    !!disableFetch &&
-    page === 1 &&
-    !searchQuery &&
-    !searchColumn &&
-    !sortColumn &&
-    !orderColumn &&
-    !statusColumn &&
-    !eventComboColumn;
 
   const buildFilter = () => {
     const filter: Record<string, any> = { is_active: 'true' };
@@ -70,24 +67,13 @@ export function ComboList({ initialCombos = [], initialMeta, disableFetch }: Com
     filter: buildFilter(),
     initialData:
       page === 1 && !searchQuery && !statusColumn && !eventComboColumn ? initialCombos : undefined,
-    enabled: !useAiDataOnly,
+    metaData: metaCombos,
   });
 
-  const combosResponse =
-    useAiDataOnly && initialCombos
-      ? ({
-          data: initialCombos,
-          meta: initialMeta || {
-            totalItems: initialCombos.length,
-            currentPage: 1,
-            totalPages: 1,
-            itemsPerPage: initialCombos.length,
-          },
-        } as any)
-      : _combosResponse;
+  const combosResponse = _combosResponse;
 
-  const combos = combosResponse?.data || [];
-  const meta = combosResponse?.meta;
+  const combos = combosResponse?.data || initialCombos || [];
+  const meta = combosResponse?.meta || metaCombos;
 
   const handleSearch = () => setPage(1);
 

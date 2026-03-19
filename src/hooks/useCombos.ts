@@ -1,46 +1,45 @@
-import { comboService } from "../services/combo.service"
-import type { ComboType } from "../types/combo.type"
-import type { PaginationQuery, PaginatedResponse } from "../types/pagination.type"
-import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { comboService } from '../services/combo.service';
+import type { ComboType } from '../types/combo.type';
+import type { PaginationQuery, PaginatedResponse, PaginationMeta } from '../types/pagination.type';
+import { useQuery } from '@tanstack/react-query';
+import { warmOption } from './option';
 
 interface UseCombosOptions extends PaginationQuery {
-  initialData?: ComboType[]
-  enabled?: boolean
+  initialData?: ComboType[];
+  metaData?: PaginationMeta;
 }
 
 export const useCombos = (options: UseCombosOptions) => {
-  const {
-    page,
-    limit,
-    sortBy,
-    search,
-    searchBy,
-    filter,
-    initialData,
-    enabled,
-  } = options
+  const { page, limit, sortBy, search, searchBy, filter, initialData, metaData } = options;
   return useQuery<PaginatedResponse<ComboType>>({
-    queryKey: ["combos", page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
+    queryKey: ['combos', page, limit, sortBy, search, searchBy, JSON.stringify(filter ?? {})],
     queryFn: async () => {
-      const response = await comboService.findAndPaginate({ page, limit, sortBy, search, searchBy, filter })
-      return response as PaginatedResponse<ComboType>
+      const response = await comboService.findAndPaginate({
+        page,
+        limit,
+        sortBy,
+        search,
+        searchBy,
+        filter,
+      });
+      return response as PaginatedResponse<ComboType>;
     },
-    enabled: enabled !== false,
-    initialData: initialData ? {
-      data: initialData,
-      success: true,
-      error: "",
-      meta: {
-        itemsPerPage: limit || 10,
-        totalItems: initialData.length,
-        currentPage: page || 1,
-        totalPages: Math.ceil(initialData.length / (limit || 10))
-      },
-      links: {
-        current: `?page=${page || 1}&limit=${limit || 10}`
-      }
-    } as PaginatedResponse<ComboType> : undefined,
-    ...defaultOption,
-  })
-}
+    initialData: initialData
+      ? ({
+          data: initialData,
+          success: true,
+          error: '',
+          meta: metaData || {
+            itemsPerPage: limit || 10,
+            totalItems: initialData.length,
+            currentPage: page || 1,
+            totalPages: Math.ceil(initialData.length / (limit || 10)),
+          },
+          links: {
+            current: `?page=${page || 1}&limit=${limit || 10}`,
+          },
+        } as PaginatedResponse<ComboType>)
+      : undefined,
+    ...warmOption,
+  });
+};

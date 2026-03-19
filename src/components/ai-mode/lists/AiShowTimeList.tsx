@@ -113,6 +113,10 @@ export function AiShowTimeList({
       page === 1 && !movieId && !dayTypeFilter && !roomFilter && !startDate && !endDate
         ? initialShowTimes
         : undefined,
+    initialMeta:
+      page === 1 && !movieId && !dayTypeFilter && !roomFilter && !startDate && !endDate
+        ? initialMeta
+        : undefined,
     enabled: !useAiDataOnly,
   });
 

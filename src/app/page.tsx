@@ -38,6 +38,9 @@ export default async function HomePage() {
     ? (movieTypesResponse.data as MovieTypeType[])
     : [];
 
+  const metaNowShowing = nowShowingResponse.meta;
+  const metaComingSoon = comingSoonResponse.meta;
+
   return (
     <main className="min-h-screen">
       <HeroCarousel initialSlides={initialSlides} />
@@ -94,7 +97,9 @@ export default async function HomePage() {
 
       <MovieList
         initialNowShowing={initialNowShowing}
+        metaNowShowing={metaNowShowing}
         initialComingSoon={initialComingSoon}
+        metaComingSoon={metaComingSoon}
         initialMovieTypes={initialMovieTypes}
         mode="all"
         title="Phim Chiếu Rạp"

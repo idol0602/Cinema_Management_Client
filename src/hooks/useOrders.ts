@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { orderService } from "@/services/order.service"
 import type {PaginationQuery, PaginatedResponse} from "../types/pagination.type"
 import type { OrderType, OrderDetails } from "@/types/order.type"
-import { defaultOption } from "./option"
+import { hotOption } from "./option"
 
 interface UseOrderHistoryOptions extends PaginationQuery {
     initialData?: OrderType[]
@@ -37,7 +37,7 @@ export const useOrderHistory = (options: UseOrderHistoryOptions) => {
             current: `?page=${page || 1}&limit=${limit || 10}`
         }
     } as PaginatedResponse<OrderType> : undefined,
-    ...defaultOption,
+    ...hotOption,
   })
 }
 
@@ -49,7 +49,7 @@ export const useOrderDetails = (orderId: string | null) => {
       return response as { data: OrderDetails; success: boolean; error?: string }
     },
     enabled: !!orderId,
-    ...defaultOption,
+    ...hotOption,
   })
 }
 

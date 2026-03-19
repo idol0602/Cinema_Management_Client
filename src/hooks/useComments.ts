@@ -1,21 +1,14 @@
-import { commentService } from "../services/comment.service";
+import { commentService } from '../services/comment.service';
 import type {
   CommentWithUserType,
   CreateCommentType,
   UpdateCommentType,
-} from "../types/comment.type";
-import type {
-  PaginationQuery,
-  PaginatedResponse,
-} from "../types/pagination.type";
+} from '../types/comment.type';
+import type { PaginationQuery, PaginatedResponse } from '../types/pagination.type';
 
-import {
-  useQuery,
-  useQueryClient,
-  useMutation,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
-import { defaultOption } from "./option";
+import { hotOption } from './option';
 
 interface UseCommentsOptions extends PaginationQuery {
   initialData?: CommentWithUserType[];
@@ -24,20 +17,12 @@ interface UseCommentsOptions extends PaginationQuery {
 export const useComments = (options: UseCommentsOptions) => {
   const queryClient = useQueryClient();
 
-  const {
-    page,
-    limit,
-    sortBy,
-    search,
-    searchBy,
-    filter,
-    initialData,
-  } = options;
+  const { page, limit, sortBy, search, searchBy, filter, initialData } = options;
 
   // ================================
   // QUERY KEY
   // ================================
-  const baseKey = ["comments"];
+  const baseKey = ['comments'];
 
   const queryKey = [
     ...baseKey,
@@ -75,14 +60,12 @@ export const useComments = (options: UseCommentsOptions) => {
       ? {
           data: initialData,
           success: true,
-          error: "",
+          error: '',
           meta: {
             itemsPerPage: limit || 10,
             totalItems: initialData.length,
             currentPage: page || 1,
-            totalPages: Math.ceil(
-              initialData.length / (limit || 10)
-            ),
+            totalPages: Math.ceil(initialData.length / (limit || 10)),
           },
           links: {
             current: `?page=${page || 1}&limit=${limit || 10}`,
@@ -90,7 +73,7 @@ export const useComments = (options: UseCommentsOptions) => {
         }
       : undefined,
 
-    ...defaultOption,
+    ...hotOption,
   });
 
   // ================================
@@ -116,13 +99,7 @@ export const useComments = (options: UseCommentsOptions) => {
   // UPDATE COMMENT
   // ================================
   const updateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: UpdateCommentType;
-    }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateCommentType }) => {
       const response = await commentService.update(id, data);
 
       if (!response.success) {
@@ -184,7 +161,6 @@ export const useComments = (options: UseCommentsOptions) => {
     deleteError: deleteMutation.error,
 
     // manual invalidate
-    invalidate: () =>
-      queryClient.invalidateQueries({ queryKey: baseKey }),
+    invalidate: () => queryClient.invalidateQueries({ queryKey: baseKey }),
   };
 };

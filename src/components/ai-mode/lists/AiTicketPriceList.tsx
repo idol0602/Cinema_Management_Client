@@ -89,6 +89,10 @@ export function AiTicketPriceList({
       page === 1 && !searchQuery && !dayTypeColumn && !seatTypeIdColumn && !formatIdColumn
         ? initialTicketPrices
         : undefined,
+    initialMeta:
+      page === 1 && !searchQuery && !dayTypeColumn && !seatTypeIdColumn && !formatIdColumn
+        ? initialMeta
+        : undefined,
     enabled: !useAiDataOnly,
   });
 

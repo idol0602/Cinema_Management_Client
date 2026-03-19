@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { rateService } from "@/services/rate.service"
 import type { CreateRateType, UpdateRateType } from "@/types/rate.type"
-import { defaultOption } from "./option"
+import { hotOption } from "./option"
 
 interface UseRateOptions {
   userId?: string
@@ -32,7 +32,7 @@ export const useRate = ({ userId, movieId }: UseRateOptions = {}) => {
       return response.data[0] || null
     },
     enabled: !!userId && !!movieId,
-    ...defaultOption
+    ...hotOption
   })
 
   // Mutations

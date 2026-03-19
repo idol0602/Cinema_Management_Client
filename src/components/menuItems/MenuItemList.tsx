@@ -27,14 +27,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface MenuItemListProps {
   initialMenuItems?: MenuItemType[];
-  initialMeta?: PaginationMeta;
-  disableFetch?: boolean;
+  metaMenuItems?: PaginationMeta;
 }
 
 export function MenuItemList({
   initialMenuItems = [],
-  initialMeta,
-  disableFetch,
+  metaMenuItems = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+  },
 }: MenuItemListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,15 +45,6 @@ export function MenuItemList({
   const [sortColumn, setSortColumn] = useState('');
   const [orderColumn, setOrderColumn] = useState('');
   const [itemTypeColumn, setItemTypeColumn] = useState('');
-
-  const useAiDataOnly =
-    !!disableFetch &&
-    page === 1 &&
-    !searchQuery &&
-    !searchColumn &&
-    !sortColumn &&
-    !orderColumn &&
-    !itemTypeColumn;
 
   const buildFilter = () => {
     const filter: Record<string, any> = {};
@@ -74,24 +68,13 @@ export function MenuItemList({
     sortBy: buildSortBy(),
     filter: buildFilter(),
     initialData: page === 1 && !searchQuery && !itemTypeColumn ? initialMenuItems : undefined,
-    enabled: !useAiDataOnly,
+    metaData: metaMenuItems,
   });
 
-  const menuItemsResponse =
-    useAiDataOnly && initialMenuItems
-      ? ({
-          data: initialMenuItems,
-          meta: initialMeta || {
-            totalItems: initialMenuItems.length,
-            currentPage: 1,
-            totalPages: 1,
-            itemsPerPage: initialMenuItems.length,
-          },
-        } as any)
-      : _menuItemsResponse;
+  const menuItemsResponse = _menuItemsResponse;
 
-  const menuItems = menuItemsResponse?.data || [];
-  const meta = menuItemsResponse?.meta;
+  const menuItems = menuItemsResponse?.data || initialMenuItems || [];
+  const meta = menuItemsResponse?.meta || metaMenuItems;
 
   const handleSearch = () => setPage(1);
 
@@ -119,7 +102,7 @@ export function MenuItemList({
     <div>
       {/* Filters */}
       <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           {/* Search Input */}
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -187,6 +170,22 @@ export function MenuItemList({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Sort Order */}
+          <Select
+            value={orderColumn || 'DEFAULT'}
+            onValueChange={(val) => setOrderColumn(val === 'DEFAULT' ? '' : val)}
+            disabled={!sortColumn}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
+              <SelectValue placeholder="Thứ tự" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DEFAULT">Mặc định</SelectItem>
+              <SelectItem value="ASC">Tăng dần</SelectItem>
+              <SelectItem value="DESC">Giảm dần</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Active Filters Display */}
@@ -202,7 +201,11 @@ export function MenuItemList({
                 onClick={() => handleClearFilter('search')}
                 className="h-7 text-xs"
               >
-                Tìm: &quot;{searchQuery}&quot; ×
+                Tìm: &quot;{searchQuery}&quot;{' '}
+                {searchColumn
+                  ? `(${menuItemPaginateConfig.searchableColumns.find((c) => c.value === searchColumn)?.label})`
+                  : ''}{' '}
+                ×
               </Button>
             )}
             {itemTypeColumn && (

@@ -1,11 +1,12 @@
 import { eventService } from "../../services/event.service"
 import type { EventType } from "../../types/event.type"
-import type { PaginationQuery, PaginatedResponse } from "../../types/pagination.type"
+import type { PaginationQuery, PaginatedResponse, PaginationMeta } from "../../types/pagination.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "../option"
+import { warmOption } from "../option"
 
 interface UseAiEventsOptions extends PaginationQuery {
   initialData?: EventType[]
+  initialMeta?: PaginationMeta
   enabled?: boolean
 }
 
@@ -18,6 +19,7 @@ export const useAiEvents = (options: UseAiEventsOptions) => {
     searchBy,
     filter,
     initialData,
+    initialMeta,
     enabled,
   } = options
   return useQuery<PaginatedResponse<EventType>>({
@@ -27,20 +29,32 @@ export const useAiEvents = (options: UseAiEventsOptions) => {
       return response as PaginatedResponse<EventType>
     },
     enabled: enabled !== false,
-    initialData: initialData ? {
-      data: initialData,
-      success: true,
-      error: "",
-      meta: {
-        itemsPerPage: limit || 10,
-        totalItems: initialData.length,
-        currentPage: page || 1,
-        totalPages: Math.ceil(initialData.length / (limit || 10))
-      },
-      links: {
-        current: `?page=${page || 1}&limit=${limit || 10}`
-      }
-    } as PaginatedResponse<EventType> : undefined,
-    ...defaultOption,
+    initialData: initialData && initialMeta
+      ? {
+          data: initialData,
+          success: true,
+          error: "",
+          meta: initialMeta,
+          links: {
+            current: `?page=${page || 1}&limit=${limit || 10}`
+          }
+        } as PaginatedResponse<EventType>
+      : initialData && !initialMeta
+      ? {
+          data: initialData,
+          success: true,
+          error: "",
+          meta: {
+            itemsPerPage: limit || 10,
+            totalItems: initialData.length,
+            currentPage: page || 1,
+            totalPages: Math.ceil(initialData.length / (limit || 10))
+          },
+          links: {
+            current: `?page=${page || 1}&limit=${limit || 10}`
+          }
+        } as PaginatedResponse<EventType>
+      : undefined,
+    ...warmOption,
   })
 }

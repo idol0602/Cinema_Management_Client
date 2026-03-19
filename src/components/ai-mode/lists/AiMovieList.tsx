@@ -372,6 +372,10 @@ export function AiMovieList({
     filter: buildFilter(nsMovieTypeColumns),
     initialData:
       nsPage === 1 && !nsSearch && nsMovieTypeColumns.length === 0 ? initialNowShowing : undefined,
+    initialMeta:
+      nsPage === 1 && !nsSearch && nsMovieTypeColumns.length === 0
+        ? initialNowShowingMeta
+        : undefined,
   });
 
   // Coming Soon hook
@@ -384,6 +388,10 @@ export function AiMovieList({
     filter: buildFilter(csMovieTypeColumns),
     initialData:
       csPage === 1 && !csSearch && csMovieTypeColumns.length === 0 ? initialComingSoon : undefined,
+    initialMeta:
+      csPage === 1 && !csSearch && csMovieTypeColumns.length === 0
+        ? initialComingSoonMeta
+        : undefined,
   });
 
   const nsFallbackResponse = {

@@ -2,7 +2,7 @@ import {movieService} from "../services/movie.service"
 import type {MovieType} from "../types/movie.type"
 import type {PaginationQuery, PaginatedResponse} from "../types/pagination.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { warmOption } from "./option"
 
 interface UseMoviesOptions extends PaginationQuery {
   initialData?: MovieType[]
@@ -38,6 +38,6 @@ export const useMovies = (options: UseMoviesOptions) => {
                 current: `?page=${page || 1}&limit=${limit || 10}`
             }
         } as PaginatedResponse<MovieType> : undefined,
-        ...defaultOption,
+        ...warmOption,
     })
 }

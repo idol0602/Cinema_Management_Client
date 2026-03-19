@@ -28,21 +28,24 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import type { ShowTimeType } from '@/types/showTime.type';
-import type { PaginationMeta } from '@/types/pagination.type';
+
 import Link from 'next/link';
 
 interface ShowTimeListProps {
   initialShowTimes?: ShowTimeType[];
-  initialMeta?: PaginationMeta;
+  metaShowTimes?: PaginationMeta;
   movieId?: string;
-  disableFetch?: boolean;
 }
 
 export function ShowTimeList({
   initialShowTimes = [],
-  initialMeta,
+  metaShowTimes = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+  },
   movieId,
-  disableFetch,
 }: ShowTimeListProps) {
   const [page, setPage] = useState(1);
   const [sortColumn, setSortColumn] = useState('');
@@ -52,16 +55,6 @@ export function ShowTimeList({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const defaultStartTimeIso = useMemo(() => new Date().toISOString(), []);
-
-  const useAiDataOnly =
-    !!disableFetch &&
-    page === 1 &&
-    !sortColumn &&
-    !orderColumn &&
-    !dayTypeFilter &&
-    !roomFilter &&
-    !startDate &&
-    !endDate;
 
   // Fetch rooms for filter
   const { data: rooms } = useRooms();
@@ -90,7 +83,6 @@ export function ShowTimeList({
       filter.end_time.$lte = `${endDate}T23:59:00Z`;
     }
 
-    console.log('Built filter:', filter);
     return filter;
   };
 
@@ -113,24 +105,13 @@ export function ShowTimeList({
       page === 1 && !movieId && !dayTypeFilter && !roomFilter && !startDate && !endDate
         ? initialShowTimes
         : undefined,
-    enabled: !useAiDataOnly,
+    metaData: metaShowTimes,
   });
 
-  const response =
-    useAiDataOnly && initialShowTimes
-      ? ({
-          data: initialShowTimes,
-          meta: initialMeta || {
-            totalItems: initialShowTimes.length,
-            currentPage: 1,
-            totalPages: 1,
-            itemsPerPage: initialShowTimes.length,
-          },
-        } as any)
-      : _response;
+  const response = _response;
 
-  const showTimes: ShowTimeType[] = (response?.data || []) as ShowTimeType[];
-  const meta = response?.meta;
+  const showTimes: ShowTimeType[] = (response?.data || initialShowTimes || []) as ShowTimeType[];
+  const meta = response?.meta || metaShowTimes;
 
   // Auto-search when filters change
   useEffect(() => {

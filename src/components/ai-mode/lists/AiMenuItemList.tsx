@@ -74,6 +74,7 @@ export function AiMenuItemList({
     sortBy: buildSortBy(),
     filter: buildFilter(),
     initialData: page === 1 && !searchQuery && !itemTypeColumn ? initialMenuItems : undefined,
+    initialMeta: page === 1 && !searchQuery && !itemTypeColumn ? initialMeta : undefined,
     enabled: !useAiDataOnly,
   });
 

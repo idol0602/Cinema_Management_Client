@@ -21,11 +21,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface EventListProps {
   initialEvents?: EventType[];
-  initialMeta?: PaginationMeta;
-  disableFetch?: boolean;
+  metaEvents?: PaginationMeta;
 }
 
-export function EventList({ initialEvents = [], initialMeta, disableFetch }: EventListProps) {
+export function EventList({
+  initialEvents = [],
+  metaEvents = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+  },
+}: EventListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchColumn, setSearchColumn] = useState('');
@@ -38,17 +45,6 @@ export function EventList({ initialEvents = [], initialMeta, disableFetch }: Eve
   // Event detail dialog state
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-
-  const useAiDataOnly =
-    !!disableFetch &&
-    page === 1 &&
-    !searchQuery &&
-    !searchColumn &&
-    !sortColumn &&
-    !orderColumn &&
-    !statusColumn &&
-    !counterColumn &&
-    !inComboColumn;
 
   const handleViewDetail = (event: EventType) => {
     setSelectedEvent(event);
@@ -80,24 +76,13 @@ export function EventList({ initialEvents = [], initialMeta, disableFetch }: Eve
       page === 1 && !searchQuery && !statusColumn && !counterColumn && !inComboColumn
         ? initialEvents
         : undefined,
-    enabled: !useAiDataOnly,
+    metaData: metaEvents,
   });
 
-  const eventsResponse =
-    useAiDataOnly && initialEvents
-      ? ({
-          data: initialEvents,
-          meta: initialMeta || {
-            totalItems: initialEvents.length,
-            currentPage: 1,
-            totalPages: 1,
-            itemsPerPage: initialEvents.length,
-          },
-        } as any)
-      : _eventsResponse;
+  const eventsResponse = _eventsResponse;
 
-  const events = eventsResponse?.data || [];
-  const meta = eventsResponse?.meta;
+  const events = eventsResponse?.data || initialEvents || [];
+  const meta = eventsResponse?.meta || metaEvents;
 
   const handleSearch = () => setPage(1);
 

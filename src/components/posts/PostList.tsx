@@ -1,47 +1,57 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { usePosts } from "@/hooks/usePosts"
-import { postPaginateConfig } from "@/config/paginate/post.config"
-import { PostCard } from "./PostCard"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import type { PostType } from "@/types/post.type"
+import React, { useState, useEffect } from 'react';
+import { usePosts } from '@/hooks/usePosts';
+import { postPaginateConfig } from '@/config/paginate/post.config';
+import { PostCard } from './PostCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { PostType } from '@/types/post.type';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, FileText } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+} from '@/components/ui/select';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { PaginationMeta } from '@/types/pagination.type';
 
 interface PostListProps {
-  initialPosts?: PostType[]
+  initialPosts?: PostType[];
+  initialMetaData?: PaginationMeta;
 }
 
-export function PostList({ initialPosts = [] }: PostListProps) {
-  const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchColumn, setSearchColumn] = useState("")
-  const [sortColumn, setSortColumn] = useState("")
-  const [orderColumn, setOrderColumn] = useState("")
+export function PostList({
+  initialPosts = [],
+  initialMetaData = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+  },
+}: PostListProps) {
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchColumn, setSearchColumn] = useState('');
+  const [sortColumn, setSortColumn] = useState('');
+  const [orderColumn, setOrderColumn] = useState('');
 
   // Build filter object - NO status filter for posts
   const buildFilter = () => {
-    return { is_active: "true" }
-  }
+    return { is_active: 'true' };
+  };
 
   // Build sortBy string
   const buildSortBy = () => {
     if (sortColumn && orderColumn) {
-      return `${sortColumn}:${orderColumn}`
+      return `${sortColumn}:${orderColumn}`;
     } else if (sortColumn) {
-      return `${sortColumn}:DESC`
+      return `${sortColumn}:DESC`;
     }
-    return postPaginateConfig.defaultSortBy[0] + ":" + postPaginateConfig.defaultSortBy[1]
-  }
+    return postPaginateConfig.defaultSortBy[0] + ':' + postPaginateConfig.defaultSortBy[1];
+  };
 
   const { data: postsResponse, isLoading } = usePosts({
     page,
@@ -51,73 +61,75 @@ export function PostList({ initialPosts = [] }: PostListProps) {
     sortBy: buildSortBy(),
     filter: buildFilter(),
     initialData: page === 1 && !searchQuery ? initialPosts : undefined,
-  })
+    metaData: initialMetaData,
+  });
 
-  const posts = postsResponse?.data || []
-  const meta = postsResponse?.meta
+  const posts = postsResponse?.data || [];
+  const meta = postsResponse?.meta;
 
   // Reset to page 1 when filters change
   const handleSearch = () => {
-    setPage(1)
-  }
+    setPage(1);
+  };
 
   // Handle search on Enter key
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch()
+    if (e.key === 'Enter') {
+      handleSearch();
     }
-  }
+  };
 
   // Auto-search when filters change
   useEffect(() => {
-    setPage(1)
-  }, [sortColumn, orderColumn, searchColumn])
+    setPage(1);
+  }, [sortColumn, orderColumn, searchColumn]);
 
   // Clear filter
   const handleClearFilter = (filterType: string) => {
-    if (filterType === "sort") {
-      setSortColumn("")
-      setOrderColumn("")
+    if (filterType === 'sort') {
+      setSortColumn('');
+      setOrderColumn('');
     }
-    if (filterType === "search") {
-      setSearchQuery("")
-      setSearchColumn("")
+    if (filterType === 'search') {
+      setSearchQuery('');
+      setSearchColumn('');
     }
-  }
+  };
 
   return (
-    <section className="py-8 bg-gray-50 dark:bg-gray-900">
+    <section className="bg-gray-50 py-8 dark:bg-gray-900">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+            <h1 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
               Bài viết
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Tin tức và cập nhật mới nhất
-            </p>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Tin tức và cập nhật mới nhất</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
             {/* Search Input */}
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm bài viết..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="pl-10 border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500"
+                className="border-gray-300 pl-10 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600"
               />
             </div>
 
             {/* Search By */}
-            <Select value={searchColumn || "ALL"} onValueChange={(val) => setSearchColumn(val === "ALL" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
+            <Select
+              value={searchColumn || 'ALL'}
+              onValueChange={(val) => setSearchColumn(val === 'ALL' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
                 <SelectValue placeholder="Tìm theo" />
               </SelectTrigger>
               <SelectContent>
@@ -131,9 +143,12 @@ export function PostList({ initialPosts = [] }: PostListProps) {
             </Select>
 
             {/* Sort By */}
-            <Select value={sortColumn || "DEFAULT"} onValueChange={(val) => setSortColumn(val === "DEFAULT" ? "" : val)}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
+            <Select
+              value={sortColumn || 'DEFAULT'}
+              onValueChange={(val) => setSortColumn(val === 'DEFAULT' ? '' : val)}
+            >
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
               <SelectContent>
@@ -148,7 +163,7 @@ export function PostList({ initialPosts = [] }: PostListProps) {
 
             {/* Sort Order */}
             <Select value={orderColumn} onValueChange={setOrderColumn} disabled={!sortColumn}>
-              <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-orange-500 focus:ring-orange-500">
+              <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-600">
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
               <SelectContent>
@@ -160,13 +175,15 @@ export function PostList({ initialPosts = [] }: PostListProps) {
 
           {/* Active Filters Display */}
           {(searchQuery || searchColumn || sortColumn) && (
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Bộ lọc đang áp dụng:</span>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">
+                Bộ lọc đang áp dụng:
+              </span>
               {searchQuery && (
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => handleClearFilter("search")}
+                  onClick={() => handleClearFilter('search')}
                   className="h-7 text-xs"
                 >
                   Tìm: "{searchQuery}" ×
@@ -176,10 +193,12 @@ export function PostList({ initialPosts = [] }: PostListProps) {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => handleClearFilter("sort")}
+                  onClick={() => handleClearFilter('sort')}
                   className="h-7 text-xs"
                 >
-                  Sắp xếp: {postPaginateConfig.sortableColumns.find(c => c.value === sortColumn)?.label} {orderColumn === "ASC" ? "↑" : "↓"} ×
+                  Sắp xếp:{' '}
+                  {postPaginateConfig.sortableColumns.find((c) => c.value === sortColumn)?.label}{' '}
+                  {orderColumn === 'ASC' ? '↑' : '↓'} ×
                 </Button>
               )}
             </div>
@@ -190,7 +209,7 @@ export function PostList({ initialPosts = [] }: PostListProps) {
         {isLoading ? (
           <div className="space-y-6">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow space-y-3">
+              <div key={i} className="space-y-3 rounded-xl bg-white p-6 shadow dark:bg-gray-800">
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
@@ -208,12 +227,12 @@ export function PostList({ initialPosts = [] }: PostListProps) {
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-12">
+              <div className="mt-12 flex items-center justify-between">
                 {/* Meta info */}
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{" "}
-                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)}{" "}
-                  của {meta.totalItems} bài viết
+                  Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
+                  {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
+                  {meta.totalItems} bài viết
                 </div>
 
                 {/* Pagination buttons */}
@@ -231,25 +250,20 @@ export function PostList({ initialPosts = [] }: PostListProps) {
 
                   <div className="flex items-center gap-1">
                     {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
-                      .filter(
-                        (p) =>
-                          p === 1 ||
-                          p === meta.totalPages ||
-                          Math.abs(p - page) <= 1
-                      )
+                      .filter((p) => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                       .map((p, index, array) => (
                         <div key={p} className="flex items-center">
                           {index > 0 && array[index - 1] !== p - 1 && (
                             <span className="px-2 text-gray-400">...</span>
                           )}
                           <Button
-                            variant={page === p ? "default" : "outline"}
+                            variant={page === p ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPage(p)}
                             className={
                               page === p
-                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white min-w-10"
-                                : "hover:bg-orange-50 dark:hover:bg-orange-950 min-w-10"
+                                ? 'min-w-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                : 'min-w-10 hover:bg-orange-50 dark:hover:bg-orange-950'
                             }
                           >
                             {p}
@@ -273,9 +287,9 @@ export function PostList({ initialPosts = [] }: PostListProps) {
             )}
           </>
         ) : (
-          <div className="text-center py-16">
-            <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <div className="py-16 text-center">
+            <FileText className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+            <h3 className="mb-2 text-xl font-semibold text-gray-700 dark:text-gray-300">
               Không tìm thấy bài viết nào
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
@@ -285,5 +299,5 @@ export function PostList({ initialPosts = [] }: PostListProps) {
         )}
       </div>
     </section>
-  )
+  );
 }

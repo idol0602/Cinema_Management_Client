@@ -80,6 +80,10 @@ export function AiEventList({ initialEvents = [], initialMeta, disableFetch }: E
       page === 1 && !searchQuery && !statusColumn && !counterColumn && !inComboColumn
         ? initialEvents
         : undefined,
+    initialMeta:
+      page === 1 && !searchQuery && !statusColumn && !counterColumn && !inComboColumn
+        ? initialMeta
+        : undefined,
     enabled: !useAiDataOnly,
   });
 

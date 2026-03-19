@@ -29,18 +29,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface TicketPriceListProps {
   initialTicketPrices?: TicketPriceType[];
-  initialMeta?: PaginationMeta;
   formats: FormatType[];
   seatTypes: SeatTypeDetailType[];
-  disableFetch?: boolean;
+  metaTicketPrices: PaginationMeta;
 }
 
 export function TicketPriceList({
   initialTicketPrices = [],
-  initialMeta,
   formats,
   seatTypes,
-  disableFetch,
+  metaTicketPrices = {
+    totalItems: 0,
+    itemsPerPage: 0,
+    totalPages: 0,
+    currentPage: 0,
+    sortBy: [],
+    filter: {},
+    searchBy: '',
+  },
 }: TicketPriceListProps) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,17 +56,6 @@ export function TicketPriceList({
   const [dayTypeColumn, setDayTypeColumn] = useState('');
   const [seatTypeIdColumn, setSeatTypeIdColumn] = useState('');
   const [formatIdColumn, setFormatIdColumn] = useState('');
-
-  const useAiDataOnly =
-    !!disableFetch &&
-    page === 1 &&
-    !searchQuery &&
-    !searchColumn &&
-    !sortColumn &&
-    !orderColumn &&
-    !dayTypeColumn &&
-    !seatTypeIdColumn &&
-    !formatIdColumn;
 
   const buildFilter = () => {
     const filter: Record<string, any> = {};
@@ -85,28 +80,12 @@ export function TicketPriceList({
     searchBy: searchColumn || undefined,
     sortBy: buildSortBy(),
     filter: buildFilter(),
-    initialData:
-      page === 1 && !searchQuery && !dayTypeColumn && !seatTypeIdColumn && !formatIdColumn
-        ? initialTicketPrices
-        : undefined,
-    enabled: !useAiDataOnly,
+    initialData: initialTicketPrices,
+    metaData: metaTicketPrices,
   });
 
-  const ticketPricesResponse =
-    useAiDataOnly && initialTicketPrices
-      ? ({
-          data: initialTicketPrices,
-          meta: initialMeta || {
-            totalItems: initialTicketPrices.length,
-            currentPage: 1,
-            totalPages: 1,
-            itemsPerPage: initialTicketPrices.length,
-          },
-        } as any)
-      : _ticketPricesResponse;
-
-  const ticketPrices = ticketPricesResponse?.data || [];
-  const meta = ticketPricesResponse?.meta;
+  const ticketPrices = _ticketPricesResponse?.data || initialTicketPrices || [];
+  const meta = _ticketPricesResponse?.meta || metaTicketPrices;
 
   const getFormatName = (formatId: string) => {
     const format = formats.find((f) => f.id === formatId);
@@ -152,19 +131,7 @@ export function TicketPriceList({
     <div>
       {/* Filters */}
       <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-          {/* Search Input */}
-          <div className="relative md:col-span-2">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm giá vé..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="border-gray-300 pl-10 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600"
-            />
-          </div>
-
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-8">
           {/* Day Type Filter */}
           <Select
             value={dayTypeColumn || 'ALL'}
@@ -238,10 +205,31 @@ export function TicketPriceList({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Sort Order */}
+          <Select
+            value={orderColumn || 'DEFAULT'}
+            onValueChange={(val) => setOrderColumn(val === 'DEFAULT' ? '' : val)}
+            disabled={!sortColumn}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600">
+              <SelectValue placeholder="Thứ tự" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DEFAULT">Mặc định</SelectItem>
+              <SelectItem value="ASC">Tăng dần</SelectItem>
+              <SelectItem value="DESC">Giảm dần</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Active Filters */}
-        {(searchQuery || dayTypeColumn || seatTypeIdColumn || formatIdColumn || sortColumn) && (
+        {(searchQuery ||
+          searchColumn ||
+          dayTypeColumn ||
+          seatTypeIdColumn ||
+          formatIdColumn ||
+          sortColumn) && (
           <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
             <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">
               Bộ lọc đang áp dụng:
@@ -253,7 +241,11 @@ export function TicketPriceList({
                 onClick={() => handleClearFilter('search')}
                 className="h-7 text-xs"
               >
-                Tìm: &quot;{searchQuery}&quot; ×
+                Tìm: &quot;{searchQuery}&quot;{' '}
+                {searchColumn
+                  ? `(${ticketPricePaginateConfig.searchableColumns.find((c) => c.value === searchColumn)?.label})`
+                  : ''}{' '}
+                ×
               </Button>
             )}
             {dayTypeColumn && (

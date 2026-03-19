@@ -1,7 +1,7 @@
 import { eventTypeService } from "../services/eventType.service"
 import type { EventTypeType } from "../types/eventType.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { coldOption } from "./option"
 
 interface UseEventTypesOptions {
   initialData?: EventTypeType[]
@@ -18,6 +18,6 @@ export const useEventTypes = (options?: UseEventTypesOptions) => {
       return []
     },
     initialData: options?.initialData,
-    ...defaultOption,
+    ...coldOption,
   })
 }

@@ -1,7 +1,7 @@
 import { roomService } from "@/services/room.service"
 import type { RoomType } from "@/types/room.type"
 import { useQuery } from "@tanstack/react-query"
-import { defaultOption } from "./option"
+import { coldOption } from "./option"
 
 export const useRooms = () => {
   return useQuery<RoomType[]>({
@@ -10,6 +10,6 @@ export const useRooms = () => {
       const response = await roomService.getAll()
       return response.data as RoomType[]
     },
-    ...defaultOption,
+    ...coldOption,
   })
 }
