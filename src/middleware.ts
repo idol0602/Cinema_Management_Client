@@ -2,33 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Check for access token in multiple places
-  const accessTokenCookie = request.cookies.get("access_token")?.value
-  const authStorageCookie = request.cookies.get("auth-storage")?.value
+  // Middleware agora apenas passa requisições através
+  // Proteção de rota é feita no lado do cliente com ProtectedRoute component
+  // Isso evita race condition entre server-side cookie verification e client-side state
   
-  // Verify authentication
-  const isAuthenticated = !!(accessTokenCookie || authStorageCookie)
-
-  // Protected routes that require authentication
-  const protectedRoutes = ['/profile', '/bookings', '/orders']
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-
-  // If accessing protected route without auth, redirect to login
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL('/auth/login', request.url)
-    loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Allow access to auth routes when already authenticated
-  if (pathname.startsWith('/auth') && isAuthenticated && 
-      !pathname.endsWith('/logout') && 
-      !pathname.endsWith('/forgot-password')) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
   const response = NextResponse.next()
   response.headers.set('x-custom-header', 'my-custom-value')
   
