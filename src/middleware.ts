@@ -2,16 +2,34 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const {pathname} = request.nextUrl
+  const { pathname } = request.nextUrl
 
-  const accessToken = request.cookies.get("access_token")?.value
-  if(pathname.startsWith("/profile") && !accessToken) {
-    console.log("chưa login")
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+  // Check for access token in multiple places
+  const accessTokenCookie = request.cookies.get("access_token")?.value
+  const authStorageCookie = request.cookies.get("auth-storage")?.value
+  
+  // Verify authentication
+  const isAuthenticated = !!(accessTokenCookie || authStorageCookie)
+
+  // Protected routes that require authentication
+  const protectedRoutes = ['/profile', '/bookings', '/orders']
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
+  // If accessing protected route without auth, redirect to login
+  if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL('/auth/login', request.url)
+    loginUrl.searchParams.set('from', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Allow access to auth routes when already authenticated
+  if (pathname.startsWith('/auth') && isAuthenticated && 
+      !pathname.endsWith('/logout') && 
+      !pathname.endsWith('/forgot-password')) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   const response = NextResponse.next()
-
   response.headers.set('x-custom-header', 'my-custom-value')
   
   return response;

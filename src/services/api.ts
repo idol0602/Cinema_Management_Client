@@ -2,6 +2,8 @@ import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import qs from 'qs';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const api : AxiosInstance  = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
@@ -9,7 +11,7 @@ const api : AxiosInstance  = axios.create({
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true',
   },
-  withCredentials: true,
+  withCredentials: true, // Important: Send cookies with requests
   paramsSerializer: (params) =>
     qs.stringify(params, {
       allowDots: true,
@@ -21,6 +23,10 @@ const api : AxiosInstance  = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Ensure cookies are sent in all requests
+    if (typeof window !== 'undefined') {
+      // For browser requests, cookies are handled automatically with withCredentials: true
+    }
     return config;
   },
   (error) => {
@@ -37,6 +43,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        // Redirect to login on 401
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/auth')) {
+          window.location.href = '/auth/login';
+        }
       }
     }
     return Promise.reject(error);

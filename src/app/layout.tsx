@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { AuthInitializer } from '@/components/providers/auth-initializer';
 import { Header } from '@/components/commons/header';
 import { Footer } from '@/components/commons/footer';
 import { Toaster } from 'sonner';
@@ -49,7 +50,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html
+      lang="vi"
+      suppressHydrationWarning
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+    >
       <body className="min-h-screen font-sans antialiased">
         <ThemeProvider
           attribute="class"
@@ -59,13 +64,14 @@ export default function RootLayout({
         >
           <QueryProvider>
             <SocketProvider>
-              <div className="flex flex-col min-h-screen w-full">
+              <AuthInitializer />
+              <div className="flex min-h-screen w-full flex-col">
                 <Header />
                 <main className="flex-1">{children}</main>
                 <Footer />
               </div>
               <ChatPopup />
-              <Toaster position="top-right" richColors closeButton/>
+              <Toaster position="top-right" richColors closeButton />
             </SocketProvider>
           </QueryProvider>
         </ThemeProvider>
@@ -73,4 +79,3 @@ export default function RootLayout({
     </html>
   );
 }
-
