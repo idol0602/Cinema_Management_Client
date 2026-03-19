@@ -156,19 +156,7 @@ export function AiTicketPriceList({
     <div>
       {/* Filters */}
       <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-          {/* Search Input */}
-          <div className="relative md:col-span-2">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm giá vé..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="border-gray-300 pl-10 focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600"
-            />
-          </div>
-
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           {/* Day Type Filter */}
           <Select
             value={dayTypeColumn || 'ALL'}
@@ -240,6 +228,21 @@ export function AiTicketPriceList({
                   {col.label}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          {/* Order Filter (ASC/DESC) */}
+          <Select
+            value={orderColumn || 'DESC'}
+            onValueChange={(val) => setOrderColumn(val)}
+            disabled={!sortColumn}
+          >
+            <SelectTrigger className="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 disabled:opacity-50 dark:border-gray-600">
+              <SelectValue placeholder="Thứ tự" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DESC">Giảm dần ↓</SelectItem>
+              <SelectItem value="ASC">Tăng dần ↑</SelectItem>
             </SelectContent>
           </Select>
         </div>
