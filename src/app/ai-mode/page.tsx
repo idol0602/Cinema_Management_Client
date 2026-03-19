@@ -110,6 +110,11 @@ export default async function AiModePage() {
     ? (menuItemResponse.data as MenuItemType[])
     : [];
 
+  // Extract pagination metadata
+  const metaEvents = eventResponse.meta;
+  const metaCombos = comboResponse.meta;
+  const metaMenuItems = menuItemResponse.meta;
+
   return (
     <AiModePageClient
       initialNowShowing={initialNowShowing}
@@ -122,6 +127,9 @@ export default async function AiModePage() {
       initialMenuItems={initialMenuItems}
       formats={formats}
       seatTypes={seatTypes}
+      metaEvents={metaEvents}
+      metaCombos={metaCombos}
+      metaMenuItems={metaMenuItems}
     />
   );
 }

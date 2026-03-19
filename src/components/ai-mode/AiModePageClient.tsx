@@ -9,6 +9,9 @@ import { AiTicketPriceList } from './lists/AiTicketPriceList';
 import { AiEventList } from './lists/AiEventList';
 import { AiComboList } from './lists/AiComboList';
 import { AiMenuItemList } from './lists/AiMenuItemList';
+import { ComboList } from '@/components/combos/ComboList';
+import { EventList } from '@/components/events/EventList';
+import { MenuItemList } from '@/components/menuItems/MenuItemList';
 import { SeatMapView } from './SeatMapView';
 import { PaymentMethodView } from './PaymentMethodView';
 import { AiLoadingOverlay } from './AiLoadingOverlay';
@@ -35,6 +38,9 @@ interface AiModePageClientProps {
   initialMenuItems: MenuItemType[];
   formats: FormatType[];
   seatTypes: SeatTypeDetailType[];
+  metaEvents?: PaginationMeta;
+  metaCombos?: PaginationMeta;
+  metaMenuItems?: PaginationMeta;
 }
 
 export function AiModePageClient({
@@ -46,6 +52,9 @@ export function AiModePageClient({
   initialEvents,
   initialCombos,
   initialMenuItems,
+  metaEvents,
+  metaCombos,
+  metaMenuItems,
   formats,
   seatTypes,
 }: AiModePageClientProps) {
@@ -208,9 +217,9 @@ export function AiModePageClient({
       case 'addon':
         return (
           <div className="space-y-6">
-            <AiComboList initialCombos={initialCombos} />
-            <AiMenuItemList initialMenuItems={initialMenuItems} />
-            <AiEventList initialEvents={initialEvents} />
+            <ComboList initialCombos={initialCombos} metaCombos={metaCombos} />
+            <MenuItemList initialMenuItems={initialMenuItems} metaMenuItems={metaMenuItems} />
+            <EventList initialEvents={initialEvents} metaEvents={metaEvents} />
           </div>
         );
       // Payment step

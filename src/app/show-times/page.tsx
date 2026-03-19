@@ -16,16 +16,24 @@ export default async function ShowTimesPage({ searchParams }: ShowTimesPageProps
   const params = await searchParams;
   const movieId = params.movieId;
 
+  // Get current time to filter out past showtimes
+  const now = new Date();
+
   // Server-side fetch for initial data (SEO-friendly)
-  const filter: Record<string, any> = { is_active: true };
+  const filter: Record<string, any> = {
+    is_active: true,
+    start_time: {
+      $gte: now.toISOString(), // Only future showtimes
+    },
+  };
   if (movieId) {
     filter.movie_id = movieId;
   }
 
   const response = await showTimeService.findAndPaginate({
     page: 1,
-    limit: 10,
-    sortBy: 'created_at:DESC',
+    limit: 50,
+    sortBy: 'start_time:ASC',
     filter,
   });
 
