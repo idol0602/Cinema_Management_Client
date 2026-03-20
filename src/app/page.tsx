@@ -1,28 +1,41 @@
 import { HeroCarousel } from '@/components/home/HeroCarousel';
+import { HomeEventCarousel } from '@/components/home/HomeEventCarousel';
 import { MovieList } from '@/components/home/MovieList';
 import { slideService } from '@/services/slide.service';
 import { movieService } from '@/services/movie.service';
 import { movieTypeService } from '@/services/movieType.service';
+import { eventService } from '@/services/event.service';
 import { Sparkles, Film, Popcorn } from 'lucide-react';
 import type { SlideType } from '@/types/slide.type';
 import type { MovieType } from '@/types/movie.type';
 import type { MovieTypeType } from '@/types/movieType.type';
+import type { EventType } from '@/types/event.type';
 
 export default async function HomePage() {
   // Server-side data fetching using existing services
-  const [slidesResponse, nowShowingResponse, comingSoonResponse, movieTypesResponse] =
-    await Promise.all([
-      slideService.getAll(),
-      movieService.findNowShowing({
-        page: 1,
-        limit: 10,
-      }),
-      movieService.findComingSoon({
-        page: 1,
-        limit: 10,
-      }),
-      movieTypeService.findAll(),
-    ]);
+  const [
+    slidesResponse,
+    nowShowingResponse,
+    comingSoonResponse,
+    movieTypesResponse,
+    eventsResponse,
+  ] = await Promise.all([
+    slideService.getAll(),
+    movieService.findNowShowing({
+      page: 1,
+      limit: 10,
+    }),
+    movieService.findComingSoon({
+      page: 1,
+      limit: 10,
+    }),
+    movieTypeService.findAll(),
+    eventService.findAndPaginate({
+      page: 1,
+      limit: 10,
+      filter: { is_active: 'true' },
+    }),
+  ]);
 
   // Extract data with type safety
   const initialSlides = (
@@ -36,6 +49,9 @@ export default async function HomePage() {
     : [];
   const initialMovieTypes = Array.isArray(movieTypesResponse.data)
     ? (movieTypesResponse.data as MovieTypeType[])
+    : [];
+  const initialEvents = Array.isArray(eventsResponse.data)
+    ? (eventsResponse.data as EventType[])
     : [];
 
   const metaNowShowing = nowShowingResponse.meta;
@@ -93,8 +109,10 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+        <div className="container mx-auto px-4">
+          <HomeEventCarousel events={initialEvents} />
+        </div>
       </section>
-
       <MovieList
         initialNowShowing={initialNowShowing}
         metaNowShowing={metaNowShowing}

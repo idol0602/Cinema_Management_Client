@@ -1,78 +1,82 @@
-"use client"
+'use client';
 
-import { useSlides } from "@/hooks/useSlides"
-import type { SlideType } from "@/types/slide.type"
-import Image from "next/image"
-import { ChevronLeft, ChevronRight, Play } from "lucide-react"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useSlides } from '@/hooks/useSlides';
+import type { SlideType } from '@/types/slide.type';
+import Image from 'next/image';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TrailerDialog } from '@/components/commons/TrailerDialog';
 
 interface HeroCarouselProps {
-  initialSlides?: SlideType[]
+  initialSlides?: SlideType[];
 }
 
 export function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
   const { data: slides, isLoading } = useSlides({
     initialData: initialSlides,
-  })
-  const [currentIndex, setCurrentIndex] = useState(0)
+  });
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
   useEffect(() => {
-    if (!slides || slides.length === 0) return
+    if (!slides || slides.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length)
-    }, 5000)
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [slides])
+    return () => clearInterval(interval);
+  }, [slides]);
 
   const goToPrevious = () => {
-    if (!slides) return
-    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
-  }
+    if (!slides) return;
+    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  };
 
   const goToNext = () => {
-    if (!slides) return
-    setCurrentIndex((prev) => (prev + 1) % slides.length)
-  }
+    if (!slides) return;
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
+  };
 
   if (isLoading) {
     return (
-      <div className="relative w-full h-[600px] bg-gradient-to-br from-gray-900 to-gray-800">
-        <Skeleton className="w-full h-full" />
+      <div className="relative h-[420px] w-full bg-gradient-to-br from-gray-900 to-gray-800 sm:h-[520px] lg:h-[640px]">
+        <Skeleton className="h-full w-full" />
       </div>
-    )
+    );
   }
 
   if (!slides || slides.length === 0) {
     return (
-      <div className="relative w-full h-[600px] bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-        <p className="text-white text-xl">Không có slides để hiển thị</p>
+      <div className="relative flex h-[420px] w-full items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600 sm:h-[520px] lg:h-[640px]">
+        <p className="px-6 text-center text-lg text-white sm:text-xl">
+          Không có slides để hiển thị
+        </p>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="relative w-full h-[600px] overflow-hidden group">
+    <div className="group relative h-[420px] w-full overflow-hidden sm:h-[520px] lg:h-[640px]">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
           key={slide.id}
           className={`absolute inset-0 transition-all duration-700 ease-in-out ${
             index === currentIndex
-              ? "opacity-100 translate-x-0"
+              ? 'translate-x-0 opacity-100'
               : index < currentIndex
-              ? "opacity-0 -translate-x-full"
-              : "opacity-0 translate-x-full"
+                ? '-translate-x-full opacity-0'
+                : 'translate-x-full opacity-0'
           }`}
         >
           {/* Background Image */}
-          <div className="relative w-full h-full">
+          <div className="relative h-full w-full">
             <Image
               src={slide.image}
-              alt={slide.title || "Slide"}
+              alt={slide.title || 'Slide'}
               fill
               className="object-cover"
               priority={index === 0}
@@ -82,25 +86,25 @@ export function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
           </div>
 
           {/* Content */}
-          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16">
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 md:p-12 lg:p-16">
             <div className="container mx-auto">
-              <div className="max-w-2xl space-y-4">
+              <div className="max-w-2xl space-y-3 sm:space-y-4">
                 {slide.title && (
-                  <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-2xl animate-fade-in">
+                  <h1 className="text-2xl font-bold text-white drop-shadow-2xl sm:text-4xl md:text-5xl lg:text-6xl">
                     {slide.title}
                   </h1>
                 )}
                 {slide.content && (
-                  <p className="text-lg md:text-xl text-gray-200 drop-shadow-lg line-clamp-3">
+                  <p className="line-clamp-3 text-sm text-gray-200 drop-shadow-lg sm:text-base md:text-lg lg:text-xl">
                     {slide.content}
                   </p>
                 )}
                 {slide.trailer && (
                   <Button
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-8 py-6 text-lg shadow-2xl shadow-orange-500/50 transition-all duration-300 hover:scale-105"
-                    onClick={() => window.open(slide.trailer, "_blank")}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-2xl shadow-orange-500/50 transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:to-orange-700 sm:px-6 sm:py-3 sm:text-base md:px-8 md:py-6 md:text-lg"
+                    onClick={() => setIsTrailerOpen(true)}
                   >
-                    <Play className="mr-2 h-5 w-5 fill-white" />
+                    <Play className="mr-2 h-4 w-4 fill-white sm:h-5 sm:w-5" />
                     Xem Trailer
                   </Button>
                 )}
@@ -113,34 +117,41 @@ export function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
       {/* Navigation Arrows */}
       <button
         onClick={goToPrevious}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md flex items-center justify-center text-white transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110"
+        className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-white/30 sm:left-4 sm:h-12 sm:w-12 md:opacity-0 md:group-hover:opacity-100"
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
       <button
         onClick={goToNext}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md flex items-center justify-center text-white transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110"
+        className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-white/30 sm:right-4 sm:h-12 sm:w-12 md:opacity-0 md:group-hover:opacity-100"
         aria-label="Next slide"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2 sm:bottom-8">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
-            className={`transition-all duration-300 rounded-full ${
+            className={`rounded-full transition-all duration-300 ${
               index === currentIndex
-                ? "w-8 h-2 bg-gradient-to-r from-orange-500 to-orange-600"
-                : "w-2 h-2 bg-white/50 hover:bg-white/80"
+                ? 'h-2 w-7 bg-gradient-to-r from-orange-500 to-orange-600 sm:w-8'
+                : 'h-2 w-2 bg-white/50 hover:bg-white/80'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>
+
+      <TrailerDialog
+        open={isTrailerOpen}
+        onOpenChange={setIsTrailerOpen}
+        trailerUrl={slides[currentIndex]?.trailer}
+        title={slides[currentIndex]?.title ? `Trailer - ${slides[currentIndex]?.title}` : 'Trailer'}
+      />
     </div>
-  )
+  );
 }

@@ -98,10 +98,10 @@ function MovieTabContent({
     <div>
       {/* Filters */}
       {!isAiMode && (
-        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             {/* Search Input */}
-            <div className="relative md:col-span-2">
+            <div className="relative md:col-span-2 xl:col-span-2">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm phim..."
@@ -206,7 +206,7 @@ function MovieTabContent({
 
       {/* Movie Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5">
           {[...Array(10)].map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="aspect-[2/3] w-full rounded-lg" />
@@ -217,7 +217,7 @@ function MovieTabContent({
         </div>
       ) : movies && movies.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {movies.map((movie: MovieType) => (
               <MovieCard
                 key={movie.id}
@@ -229,13 +229,13 @@ function MovieTabContent({
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="mt-12 flex items-center justify-between">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400 lg:text-left">
                 Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
                 {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
                 {meta.totalItems} phim
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
                 <Button
                   variant="outline"
                   size="sm"
@@ -246,7 +246,7 @@ function MovieTabContent({
                   <ChevronLeft className="h-4 w-4" />
                   Trước
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md px-1 py-1">
                   {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
                     .filter((p) => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                     .map((p, index, array) => (
@@ -260,8 +260,8 @@ function MovieTabContent({
                           onClick={() => setPage(p)}
                           className={
                             page === p
-                              ? 'min-w-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                              : 'min-w-10 hover:bg-orange-50 dark:hover:bg-orange-950'
+                              ? 'min-w-10 shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                              : 'min-w-10 shrink-0 hover:bg-orange-50 dark:hover:bg-orange-950'
                           }
                         >
                           {p}
@@ -376,9 +376,6 @@ export function MovieList({
     !csOrder &&
     csMovieTypeColumns.length === 0;
 
-  const enableNowShowing = mode !== 'coming-soon';
-  const enableComingSoon = mode !== 'now-showing';
-
   const { data: _nsResponse, isLoading: nsLoading } = useNowShowingMovies({
     page: nsPage,
     limit: moviePaginateConfig.defaultLimit,
@@ -459,14 +456,16 @@ export function MovieList({
   }, [csMovieTypeColumns, csSort, csOrder, csSearchCol, csSearch]);
 
   return (
-    <section className="bg-gradient-to-b from-orange-50/40 via-white to-white py-16 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+    <section className="bg-gradient-to-b from-orange-50/40 via-white to-white py-12 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 sm:py-14 lg:py-16">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="mb-8">
-          <h2 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
+          <h2 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl md:text-4xl">
             {title}
           </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">{description}</p>
+          <p className="mt-2 max-w-3xl text-sm text-gray-600 dark:text-gray-400 sm:text-base">
+            {description}
+          </p>
         </div>
 
         {mode === 'all' ? (

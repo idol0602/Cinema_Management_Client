@@ -43,7 +43,7 @@ export function CombosPageClient({
     <div className="container mx-auto px-4">
       {/* Tab Header */}
       <div className="mb-8 flex items-center justify-center">
-        <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1.5 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <div className="inline-flex max-w-full flex-wrap justify-center gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-md dark:border-gray-700 dark:bg-gray-800">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -52,7 +52,7 @@ export function CombosPageClient({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium transition-all duration-300',
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 sm:px-6 sm:py-2.5',
                   isActive
                     ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 dark:text-gray-400 dark:hover:bg-orange-950/30 dark:hover:text-orange-400'

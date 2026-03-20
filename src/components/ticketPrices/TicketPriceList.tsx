@@ -16,14 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Search,
-  Filter,
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-} from 'lucide-react';
+import { Filter, SlidersHorizontal, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TicketPriceListProps {
@@ -96,10 +89,6 @@ export function TicketPriceList({
     return seatType ? seatType.name : seatTypeId;
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') setPage(1);
-  };
-
   useEffect(() => {
     setPage(1);
   }, [
@@ -129,8 +118,8 @@ export function TicketPriceList({
   return (
     <div>
       {/* Filters */}
-      <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-8">
+      <div className="mb-10 rounded-xl border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-8">
           {/* Day Type Filter */}
           <Select
             value={dayTypeColumn || 'ALL'}
@@ -303,7 +292,7 @@ export function TicketPriceList({
 
       {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
@@ -336,7 +325,7 @@ export function TicketPriceList({
         </div>
       ) : ticketPrices && ticketPrices.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {ticketPrices.map((item) => (
               <TicketPriceCard
                 key={item.id}
@@ -349,14 +338,14 @@ export function TicketPriceList({
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="mt-12 flex items-center justify-between">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400 lg:text-left">
                 Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
                 {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
                 {meta.totalItems} giá vé
               </div>
 
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-0 flex flex-wrap items-center justify-center gap-2 lg:justify-end">
                 <Button
                   variant="outline"
                   size="sm"
@@ -368,7 +357,7 @@ export function TicketPriceList({
                   Trước
                 </Button>
 
-                <div className="flex items-center gap-1">
+                <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md px-1 py-1">
                   {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
                     .filter((p) => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                     .map((p, index, array) => (
@@ -382,8 +371,8 @@ export function TicketPriceList({
                           onClick={() => setPage(p)}
                           className={
                             page === p
-                              ? 'min-w-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
-                              : 'min-w-10 hover:bg-emerald-50 dark:hover:bg-emerald-950'
+                              ? 'min-w-10 shrink-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
+                              : 'min-w-10 shrink-0 hover:bg-emerald-50 dark:hover:bg-emerald-950'
                           }
                         >
                           {p}

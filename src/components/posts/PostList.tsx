@@ -102,18 +102,20 @@ export function PostList({
         {/* Section Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
+            <h1 className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl md:text-4xl">
               Bài viết
             </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Tin tức và cập nhật mới nhất</p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 sm:text-base">
+              Tin tức và cập nhật mới nhất
+            </p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-md dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             {/* Search Input */}
-            <div className="relative md:col-span-2">
+            <div className="relative md:col-span-2 xl:col-span-2">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm bài viết..."
@@ -227,16 +229,16 @@ export function PostList({
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-between">
+              <div className="mt-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 {/* Meta info */}
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-center text-sm text-gray-600 dark:text-gray-400 lg:text-left">
                   Hiển thị {(meta.currentPage - 1) * meta.itemsPerPage + 1} -{' '}
                   {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} của{' '}
                   {meta.totalItems} bài viết
                 </div>
 
                 {/* Pagination buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
                   <Button
                     variant="outline"
                     size="sm"
@@ -248,7 +250,7 @@ export function PostList({
                     Trước
                   </Button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md px-1 py-1">
                     {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
                       .filter((p) => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                       .map((p, index, array) => (
@@ -262,8 +264,8 @@ export function PostList({
                             onClick={() => setPage(p)}
                             className={
                               page === p
-                                ? 'min-w-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                : 'min-w-10 hover:bg-orange-50 dark:hover:bg-orange-950'
+                                ? 'min-w-10 shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                : 'min-w-10 shrink-0 hover:bg-orange-50 dark:hover:bg-orange-950'
                             }
                           >
                             {p}
