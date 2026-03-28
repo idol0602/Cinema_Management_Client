@@ -3,16 +3,17 @@ import type { AxiosInstance } from 'axios';
 import qs from 'qs';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isBrowser = typeof window !== 'undefined';
 
 const api : AxiosInstance  = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  timeout: 10000,
+  timeout: 50000, // 50s - Render free tier có cold start lên đến 30s
   headers: {
     'Content-Type': 'application/json',
     // Only add ngrok header for development (ngrok requires this to skip browser warning)
     ...(isProduction ? {} : { 'ngrok-skip-browser-warning': 'true' }),
   },
-  withCredentials: true, // Important: Send cookies with requests
+  withCredentials: isBrowser, // Chỉ gửi cookies khi ở browser, SSR (server) không cần
   paramsSerializer: (params) =>
     qs.stringify(params, {
       allowDots: true,
@@ -24,10 +25,6 @@ const api : AxiosInstance  = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Ensure cookies are sent in all requests
-    if (typeof window !== 'undefined') {
-      // For browser requests, cookies are handled automatically with withCredentials: true
-    }
     return config;
   },
   (error) => {
@@ -42,11 +39,22 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+      // Chỉ redirect ở browser, không redirect trên server (SSR)
+      if (isBrowser) {
         localStorage.removeItem('token');
-        // Redirect to login on 401
         const currentPath = window.location.pathname;
         if (!currentPath.includes('/auth')) {
+          // Clear Zustand auth state trước khi redirect
+          try {
+            const authStorage = localStorage.getItem('auth-storage');
+            if (authStorage) {
+              const parsed = JSON.parse(authStorage);
+              parsed.state = { ...parsed.state, user: null, isAuthenticated: false };
+              localStorage.setItem('auth-storage', JSON.stringify(parsed));
+            }
+          } catch (e) {
+            localStorage.removeItem('auth-storage');
+          }
           window.location.href = '/auth/login';
         }
       }
