@@ -5,26 +5,26 @@ export type QueryConfig = Omit<UseQueryOptions<any, any, any, any>, 'queryKey' |
 
 // For data that changes frequently and needs immediate consistency (e.g., seats, orders, showtimes, comments)
 export const hotOption: QueryConfig = {
-    staleTime: 0,
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30s (data thay đổi liên tục)
+    gcTime: 5 * 60 * 1000, // 5 phút
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true
 }
 
-// For data that changes occasionally (e.g., movies, events, combos, posts)
+// Data thay đổi vừa phải
 export const warmOption: QueryConfig = {
-    staleTime: 0, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 5 * 60 * 1000, // 5 phút
+    gcTime: 15 * 60 * 1000, // 15 phút
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false
 }
 
-// For data that rarely changes (e.g., locations, rooms, ticket prices, movie types)
+// Data gần như static
 export const coldOption: QueryConfig = {
-    staleTime: 0, // 1 hour
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours
+    staleTime: 60 * 60 * 1000, // 1 giờ
+    gcTime: 24 * 60 * 60 * 1000, // 24 giờ
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false
